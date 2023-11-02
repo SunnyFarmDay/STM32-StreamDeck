@@ -94,7 +94,6 @@ int main(void)
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  LCD_INIT();
   /* USER CODE END 2 */
 
   /* Infinite loop */
