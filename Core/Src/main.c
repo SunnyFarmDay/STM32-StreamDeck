@@ -94,6 +94,7 @@ int main(void)
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  LCD_INIT();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -103,6 +104,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	LCD_DrawString(100, 100, "Testing");
   }
   /* USER CODE END 3 */
 }
