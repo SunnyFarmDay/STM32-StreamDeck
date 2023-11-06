@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "lcd.h"
+#include <string.h>
+#include "lcdtp.h"
+#include "xpt2046.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +34,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define usScreenWidth 240
+#define usScreenHeight 320
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,7 +49,8 @@
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
-
+char * pStr = 0;
+int actionFlag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,7 +64,101 @@ static void MX_SDIO_SD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void audiofxConfigPage(void)
+{
+  LCD_Clear (0, 0, 240, 320, BACKGROUND);
+  /* Button rendering */
+  LCD_DrawBox(8, 8, 48, 48);
+  pStr = "BACK";
+  LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
+  /* Title */
+  pStr = "Audio FX";
+  LCD_DrawString_Color ( 64, 28, pStr, BACKGROUND, BLACK );	
+  while (1)
+  {
+    if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = backButton();
+      ucXPT2046_TouchFlag = 0;
+      if (actionFlag == 0) {
+        LCD_Clear (0, 0, 240, 320, BACKGROUND);
+        return;
+      }
+    }					
+	  HAL_Delay(50);
+  }	
+}
 
+void displayConfigPage(void)
+{
+  LCD_Clear (0, 0, 240, 320, BACKGROUND);
+  /* Button rendering */
+  LCD_DrawBox(8, 8, 48, 48);
+  pStr = "BACK";
+  LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
+  /* Title */
+  pStr = "Display options";
+  LCD_DrawString_Color ( 64, 28, pStr, BACKGROUND, BLACK );	
+  while (1)
+  {
+    if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = backButton();
+      ucXPT2046_TouchFlag = 0;
+      if (actionFlag == 0) {
+        LCD_Clear (0, 0, 240, 320, BACKGROUND);
+        return;
+      }
+    }					
+	  HAL_Delay(50);
+  }	
+}
+
+void dvConfigPage(void)
+{
+  LCD_Clear (0, 0, 240, 320, BACKGROUND);
+  /* Button rendering */
+  LCD_DrawBox(8, 8, 48, 48);
+  pStr = "BACK";
+  LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
+  /* Title */
+  pStr = "Dynamic Vibration";
+  LCD_DrawString_Color ( 64, 28, pStr, BACKGROUND, BLACK );	
+  while (1)
+  {
+    if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = backButton();
+      ucXPT2046_TouchFlag = 0;
+      if (actionFlag == 0) {
+        LCD_Clear (0, 0, 240, 320, BACKGROUND);
+        return;
+      }
+    }					
+	  HAL_Delay(50);
+  }	
+}
+
+void hiddenConfigPage(void)
+{
+  LCD_Clear (0, 0, 240, 320, BACKGROUND);
+  /* Button rendering */
+  LCD_DrawBox(8, 8, 48, 48);
+  pStr = "BACK";
+  LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
+  /* Title */
+  pStr = "Advanced options";
+  LCD_DrawString_Color ( 64, 28, pStr, BACKGROUND, BLACK );	
+  while (1)
+  {
+    if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = backButton();
+      ucXPT2046_TouchFlag = 0;
+      if (actionFlag == 0) {
+        LCD_Clear (0, 0, 240, 320, BACKGROUND);
+        return;
+      }
+    }					
+	  HAL_Delay(50);
+  }	
+}
 /* USER CODE END 0 */
 
 /**
@@ -94,7 +193,14 @@ int main(void)
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  macXPT2046_CS_DISABLE();
   LCD_INIT();
+  /* Boot splash */
+  pStr = "Welcome to Stream Deck!";			
+  LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLACK );	
+  HAL_Delay(2000);
+  LCD_Clear(0, 0, 240, 320, BACKGROUND);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -102,9 +208,66 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+    /* Main menu */
+      pStr = "Stream Deck";			// Title
+	    LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
 
+	    /* Options rendering */
+	    LCD_DrawBox(176, 32, 48, 48);
+	    pStr = "Audio FX";
+	    LCD_DrawString_Color (104, 48, pStr, BACKGROUND, BLACK );
+	    // pStr = "Audio";     // Replace me with the icon!
+	    // LCD_DrawString_Color (180, 48, pStr, BACKGROUND, BLACK );
+      LCD_DrawBox(184, 48, 8, 16);
+      LCD_DrawEllipse (194, 56, 12, 6, BLACK);
+      LCD_DrawEllipse (202, 56, 16, 6, BLACK);
+      LCD_DrawEllipse (210, 56, 20, 6, BLACK);
+
+	    LCD_DrawBox(176, 96, 48, 48);
+	    pStr = "Display";
+	    LCD_DrawString_Color (112, 112, pStr, BACKGROUND, BLACK );
+	    // pStr = "Disp";     // Replace me with the icon!
+	    // LCD_DrawString_Color (180, 112, pStr, BACKGROUND, BLACK );
+      /* Icon */
+      // Vertical deco
+      LCD_DrawLine (200, 100, 200, 104, BLACK );
+	    LCD_DrawLine (200, 136, 200, 140, BLACK );
+      // Horizontal deco
+      LCD_DrawLine (216, 120, 220, 120, BLACK );
+	    LCD_DrawLine (180, 120, 184, 120, BLACK );
+      // Slanted deco
+      LCD_DrawLine (182, 102, 186, 106, BLACK );
+	    LCD_DrawLine (182, 138, 186, 134, BLACK );
+      LCD_DrawLine (218, 102, 214, 106, BLACK );
+	    LCD_DrawLine (218, 138, 214, 134, BLACK );
+	    LCD_DrawEllipse (200, 120, 12, 12, BLACK);
+
+	    LCD_DrawBox(176, 160, 48, 48);
+	    pStr = "Dynamic Vibration";
+	    LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
+      /* Icon */
+      LCD_DrawBox(182, 166, 36, 36);
+	    LCD_DrawEllipse (200, 184, 12, 12, BLACK);
+
+	    LCD_DrawBox(176, 224, 48, 48);
+	    pStr = "Options";
+      /* Icon */
+	    LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
+	    LCD_DrawEllipse (200, 248, 12, 12, BLACK);
+
+      // Main dish :)
+      if ( ucXPT2046_TouchFlag == 1 ) {
+        actionFlag = menuButton();
+        ucXPT2046_TouchFlag = 0;
+        switch (actionFlag) {
+          case 0: audiofxConfigPage(); break;
+          case 1: displayConfigPage(); break;
+          case 2: dvConfigPage(); break;
+          case 3: hiddenConfigPage(); break;
+        }
+      }					
+      HAL_Delay(50);
     /* USER CODE BEGIN 3 */
-	LCD_DrawString(100, 100, "Testing");
   }
   /* USER CODE END 3 */
 }
@@ -187,16 +350,27 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_5, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PB0 PB1 PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
