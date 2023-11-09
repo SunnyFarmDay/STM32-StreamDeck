@@ -23,7 +23,6 @@
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
-extern DMA_HandleTypeDef hdma_dac_ch1;
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
@@ -107,23 +106,6 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* DAC DMA Init */
-    /* DAC_CH1 Init */
-    hdma_dac_ch1.Instance = DMA2_Channel3;
-    hdma_dac_ch1.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    hdma_dac_ch1.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_dac_ch1.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_dac_ch1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    hdma_dac_ch1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    hdma_dac_ch1.Init.Mode = DMA_CIRCULAR;
-    hdma_dac_ch1.Init.Priority = DMA_PRIORITY_LOW;
-    if (HAL_DMA_Init(&hdma_dac_ch1) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(hdac,DMA_Handle1,hdma_dac_ch1);
-
   /* USER CODE BEGIN DAC_MspInit 1 */
 
   /* USER CODE END DAC_MspInit 1 */
@@ -153,8 +135,6 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef* hdac)
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4|GPIO_PIN_5);
 
-    /* DAC DMA DeInit */
-    HAL_DMA_DeInit(hdac->DMA_Handle1);
   /* USER CODE BEGIN DAC_MspDeInit 1 */
 
   /* USER CODE END DAC_MspDeInit 1 */
@@ -250,6 +230,9 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE END TIM1_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_TIM1_CLK_ENABLE();
+    /* TIM1 interrupt Init */
+    HAL_NVIC_SetPriority(TIM1_UP_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM1_UP_IRQn);
   /* USER CODE BEGIN TIM1_MspInit 1 */
 
   /* USER CODE END TIM1_MspInit 1 */
@@ -283,6 +266,9 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE END TIM1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM1_CLK_DISABLE();
+
+    /* TIM1 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(TIM1_UP_IRQn);
   /* USER CODE BEGIN TIM1_MspDeInit 1 */
 
   /* USER CODE END TIM1_MspDeInit 1 */

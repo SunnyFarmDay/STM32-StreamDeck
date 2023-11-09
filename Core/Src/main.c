@@ -23,8 +23,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
-#include "mp3.h"
+#include "files.h"
 #include "math.h"
+#include "pcm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,7 +44,6 @@
 
 /* Private variables ---------------------------------------------------------*/
  DAC_HandleTypeDef hdac;
-DMA_HandleTypeDef hdma_dac_ch1;
 
 SD_HandleTypeDef hsd;
 
@@ -53,18 +53,30 @@ TIM_HandleTypeDef htim2;
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
-float value = 0.2;
-uint32_t var;
-uint32_t sine_val[100];
+// float value = 0.2;
+// uint32_t var;
+// uint32_t sine_val[100];
 
-#define PI 3.1415926
+// #define PI 3.1415926
 
-void getSineVal() {
-	for (int i = 0; i < 100; i++) {
-		sine_val[i] = (((sin(i*2*PI/100)+1)*(255/2))*0.5);
+// void getSineVal() {
+// 	for (int i = 0; i < 100; i++) {
+// 		sine_val[i] = (((sin(i*2*PI/100)+1)*(255/2))*0.5);
 
-	}
+// 	}
+// }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM1) {
+        if (pcmDataToRead > 0) {
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_8B_R, pcmBuffer[pcmBufferIndex]);
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_8B_R, pcmBuffer[pcmBufferIndex+1]);
+            pcmBufferIndex += 2;
+            pcmDataToRead--;
+        }
+    }
 }
+
 
 /* USER CODE END PV */
 
@@ -73,7 +85,6 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_SDIO_SD_Init(void);
-static void MX_DMA_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_DAC_Init(void);
 static void MX_TIM2_Init(void);
@@ -117,7 +128,6 @@ int main(void)
   MX_FSMC_Init();
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
-  MX_DMA_Init();
   MX_TIM1_Init();
   MX_DAC_Init();
   MX_TIM2_Init();
@@ -145,17 +155,17 @@ int main(void)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
 	}
 
-	scanMP3Files("0:/");
+	scanFiles("0:/");
 
 //	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 
-	getSineVal();
+//	getSineVal();
 //	HAL_TIM_Base_Start(&htim1);
-	HAL_TIM_Base_Start(&htim2);
+	// HAL_TIM_Base_Start(&htim2);
 //	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 //	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 
-	HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, sine_val, 100, DAC_ALIGN_8B_R);
+	// HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, sine_val, 100, DAC_ALIGN_8B_R);
 
 
   /* USER CODE END 2 */
@@ -247,7 +257,6 @@ static void MX_DAC_Init(void)
 
   /** DAC channel OUT2 config
   */
-  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
   if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
@@ -307,7 +316,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 72-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 100;
+  htim1.Init.Period = 0;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -352,7 +361,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 7-1;
+  htim2.Init.Prescaler = 72-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 100-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -381,22 +390,6 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
-
-}
-
-/**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA2_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA2_Channel3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Channel3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel3_IRQn);
 
 }
 
