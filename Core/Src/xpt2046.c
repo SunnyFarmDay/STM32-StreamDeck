@@ -407,7 +407,7 @@ uint8_t XPT2046_Touch_Calibrate ( void )
 			LCD_Clear ( 0, 0, usScreenWidth, usScreenHeight, BACKGROUND );       
 			
 			pStr = "Touch Calibrate ......";			
-      LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 1, usScreenHeight >> 1, pStr, BACKGROUND, RED );			
+      		LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 1, usScreenHeight >> 1, pStr, BACKGROUND, RED );
 		
 			sprintf ( cStr, "%d", i + 1 );
 			LCD_DrawString_Color ( usScreenWidth >> 1, ( usScreenHeight >> 1 ) - HEIGHT_EN_CHAR, cStr, BACKGROUND, RED );
@@ -422,7 +422,7 @@ uint8_t XPT2046_Touch_Calibrate ( void )
 		
 		
 		XPT2046_Calculate_CalibrationFactor ( strCrossCoordinate, strScreenSample, & CalibrationFactor ) ;  	 
-		
+
 		if ( CalibrationFactor .Divider == 0 ) goto Failure;
 		
 			
@@ -450,7 +450,7 @@ uint8_t XPT2046_Touch_Calibrate ( void )
 	
 	LCD_Clear ( 0, 0, usScreenWidth, usScreenHeight, BACKGROUND );
 	
-	pStr = "Calibration success";			
+	pStr = "Calibration success";
 	LCD_DrawString_Color ( ( usScreenWidth - strlen ( pStr ) * WIDTH_EN_CHAR ) >> 1, usScreenHeight >> 1, pStr, BACKGROUND, RED );	
 
   XPT2046_DelayUS ( 200000 );
@@ -462,10 +462,10 @@ uint8_t XPT2046_Touch_Calibrate ( void )
 	
 	LCD_Clear ( 0, 0, usScreenWidth, usScreenHeight, BACKGROUND ); 
 	
-	pStr = "Calibration fail";			
+	pStr = "Calibration fail";
 	LCD_DrawString_Color ( ( usScreenWidth - strlen ( pStr ) * WIDTH_EN_CHAR ) >> 1, usScreenHeight >> 1, pStr, BACKGROUND, RED );	
 
-	pStr = "Try again";			
+	pStr = "Try again";
 	LCD_DrawString_Color ( ( usScreenWidth - strlen ( pStr ) * WIDTH_EN_CHAR ) >> 1, ( usScreenHeight >> 1 ) + HEIGHT_EN_CHAR, pStr, BACKGROUND, RED );				
 
 	XPT2046_DelayUS ( 1000000 );		
@@ -505,24 +505,24 @@ int menuButton(void)			// Button handler for main menu
 	
 	if ( XPT2046_Get_TouchedPoint ( & strDisplayCoordinate, & strXPT2046_TouchPara ) )
 	{
-		if ( ( strDisplayCoordinate .x > 176 ) && ( strDisplayCoordinate .x < 224 ) )
+		if ( ( strDisplayCoordinate .x > 181 ) && ( strDisplayCoordinate .x < 219 ) )
 		{
-			if ( ( strDisplayCoordinate .y > 32 ) && ( strDisplayCoordinate .y < 80 ) )
+			if ( ( strDisplayCoordinate .y > 37 ) && ( strDisplayCoordinate .y < 75 ) )
 			{	// Audio FX
 				return 0;
 			}	
 
-			else if ( ( strDisplayCoordinate .y > 96 ) && ( strDisplayCoordinate .y < 144 ) )
+			else if ( ( strDisplayCoordinate .y > 101 ) && ( strDisplayCoordinate .y < 139 ) )
 			{	// Display settings
 				return 1;
 			}
 			
-			else if ( ( strDisplayCoordinate .y > 160 ) && ( strDisplayCoordinate .y < 208 ) )
+			else if ( ( strDisplayCoordinate .y > 165 ) && ( strDisplayCoordinate .y < 203 ) )
 			{	// Dynamic vibration
 				return 2;
 			}
 			
-			else if ( ( strDisplayCoordinate .y > 224 ) && ( strDisplayCoordinate .y < 272 ) )
+			else if ( ( strDisplayCoordinate .y > 229 ) && ( strDisplayCoordinate .y < 267 ) )
 			{	// Advanced options
 				return 3;
 			}		
@@ -538,13 +538,100 @@ int backButton(void)				// Button handler for config screens (with back button)
 	if ( XPT2046_Get_TouchedPoint ( & strDisplayCoordinate, & strXPT2046_TouchPara ) )
 	{
 		/* Back button handler */
-		if ( ( strDisplayCoordinate .y > 8 ) && ( strDisplayCoordinate .y < 56 ) )
+		if ( ( strDisplayCoordinate .y > 13 ) && ( strDisplayCoordinate .y < 51 ) )
 		{
-			if ( ( strDisplayCoordinate .x > 8 ) && ( strDisplayCoordinate .x < 56 ) )
+			if ( ( strDisplayCoordinate .x > 13 ) && ( strDisplayCoordinate .x < 51 ) )
 			{
-				// GPIOB -> ODR ^= GPIO_PIN_1;
+//				GPIOB -> ODR ^= GPIO_PIN_5;
 				return 0;
 			}					
+		}
+
+
+		else if ( ( strDisplayCoordinate .x > 189 ) && ( strDisplayCoordinate .x < 227 ) )
+		{
+			/* Binary button handler */
+			if ( ( strDisplayCoordinate .y > 69 ) && ( strDisplayCoordinate .y < 107 ) )
+			{
+				GPIOB -> ODR ^= GPIO_PIN_0;
+				return 1;
+			}
+
+		/* Cascading button handler */
+			else if ( ( strDisplayCoordinate .y > 125 ) && ( strDisplayCoordinate .y < 163 ) )
+			{
+				GPIOB -> ODR ^= GPIO_PIN_1;
+				return 2;
+			}
+
+		/* Trigger button handler */
+			else if ( ( strDisplayCoordinate .y > 181 ) && ( strDisplayCoordinate .y < 219 ) )
+			{
+				GPIOB -> ODR ^= GPIO_PIN_5;
+				return 3;
+			}
+		}
+
+	}
+}
+
+int audiofxConfig(void)				// Button handler for Audio FX config screen
+{
+		strType_XPT2046_Coordinate strDisplayCoordinate;
+
+	if ( XPT2046_Get_TouchedPoint ( & strDisplayCoordinate, & strXPT2046_TouchPara ) )
+	{
+		/* Back button handler */
+		if ( ( strDisplayCoordinate .y > 13 ) && ( strDisplayCoordinate .y < 51 ) )
+		{
+			if ( ( strDisplayCoordinate .x > 13 ) && ( strDisplayCoordinate .x < 51 ) )
+			{
+//				GPIOB -> ODR ^= GPIO_PIN_5;
+				return 0;
+			}
+		}
+
+
+		else if ( ( strDisplayCoordinate .x > 189 ) && ( strDisplayCoordinate .x < 227 ) )
+		{
+			/* Binary button handler */
+			if ( ( strDisplayCoordinate .y > 69 ) && ( strDisplayCoordinate .y < 107 ) )
+			{
+				GPIOB -> ODR ^= GPIO_PIN_0;
+				return 1;
+			}
+		}
+
+		else if ( ( strDisplayCoordinate .y > 147 ) && ( strDisplayCoordinate .y < 185 ) )
+		{
+			if ( ( strDisplayCoordinate .x > 37 ) && ( strDisplayCoordinate .x < 75 ) )
+			{
+				return 11;
+			}
+			else if ( ( strDisplayCoordinate .x > 97 ) && ( strDisplayCoordinate .x < 135 ) )
+			{
+				return 12;
+			}
+			else if ( ( strDisplayCoordinate .x > 157 ) && ( strDisplayCoordinate .x < 195 ) )
+			{
+				return 13;
+			}
+		}
+
+		else if ( ( strDisplayCoordinate .y > 203 ) && ( strDisplayCoordinate .y < 241 ) )
+		{
+			if ( ( strDisplayCoordinate .x > 37 ) && ( strDisplayCoordinate .x < 75 ) )
+			{
+				return 21;
+			}
+			else if ( ( strDisplayCoordinate .x > 97 ) && ( strDisplayCoordinate .x < 135 ) )
+			{
+				return 22;
+			}
+			else if ( ( strDisplayCoordinate .x > 157 ) && ( strDisplayCoordinate .x < 195 ) )
+			{
+				return 23;
+			}
 		}
 
 	}

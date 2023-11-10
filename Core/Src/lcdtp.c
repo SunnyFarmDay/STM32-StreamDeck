@@ -418,12 +418,12 @@ void LCD_DrawString ( uint16_t usC, uint16_t usP, const char * pStr )
 	
 }
 
-void LCD_DrawBox ( uint16_t usX, uint16_t usY, uint16_t XSize, uint16_t YSize )		// (usX, usY) = Upper leftmost pixel of the square | XSize×YSize setup
-{
-	LCD_DrawLine ( usX, usY, usX + XSize, usY, BLACK );
-	LCD_DrawLine ( usX, usY, usX, usY + YSize, BLACK );
-	LCD_DrawLine ( usX, usY + YSize, usX + XSize, usY + YSize, BLACK );
-	LCD_DrawLine ( usX + XSize, usY, usX + XSize, usY + YSize, BLACK );
+void LCD_DrawBox ( uint16_t usX, uint16_t usY, uint16_t XSize, uint16_t YSize, uint16_t usColor )
+{	// (usX, usY) = Upper leftmost pixel of the square | XSize×YSize setup
+	LCD_DrawLine ( usX, usY, usX + XSize, usY, usColor );
+	LCD_DrawLine ( usX, usY, usX, usY + YSize, usColor );
+	LCD_DrawLine ( usX, usY + YSize, usX + XSize, usY + YSize, usColor );
+	LCD_DrawLine ( usX + XSize, usY, usX + XSize, usY + YSize, usColor );
 }
 
 
