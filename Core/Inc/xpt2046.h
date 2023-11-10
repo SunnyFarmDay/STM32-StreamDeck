@@ -100,7 +100,9 @@ void                     XPT2046_Init                    ( void );
 uint8_t                  XPT2046_Touch_Calibrate         ( void );
 uint8_t                  XPT2046_Get_TouchedPoint        ( strType_XPT2046_Coordinate * displayPtr, strType_XPT2046_TouchPara * para );
  
-void Check_touchkey (void);  
+int menuButton(void);
+int backButton(void);
+int audiofxConfig(void);
 
 //-----------------------------
   

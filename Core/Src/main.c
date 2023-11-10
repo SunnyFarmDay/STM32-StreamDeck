@@ -45,7 +45,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
- SD_HandleTypeDef hsd;
+  SD_HandleTypeDef hsd;
 
 SRAM_HandleTypeDef hsram1;
 
@@ -71,433 +71,435 @@ static void MX_SDIO_SD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void threeFPSRGB(void);
+
 void audiofxConfigPage(void)
 {
-  LCD_Clear (0, 0, 240, 320, BACKGROUND);
-  /* Button rendering */
-  LCD_DrawBox(8, 8, 48, 48, BLACK);
-  pStr = "BACK";
-  LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK);
+	LCD_Clear (0, 0, 240, 320, BACKGROUND);
+	/* Button rendering */
+	LCD_DrawBox(8, 8, 48, 48, BLACK);
+	pStr = "BACK";
+	LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK);
 
-  /* Input source selection */
-  LCD_DrawBox(184, 64, 48, 48, GREEN);
-  pStr = "Input source";
-  LCD_DrawString_Color (16, 80, pStr, BACKGROUND, BLACK);
+	/* Input source selection */
+	LCD_DrawBox(184, 64, 48, 48, GREEN);
+	pStr = "Input source";
+	LCD_DrawString_Color (16, 80, pStr, BACKGROUND, BLACK);
 
-  if (inputSrc == 0) {
-	  LCD_DrawBox(184, 64, 48, 48, GREEN);
-	  pStr = "SD";
-	  LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
-  } else {
-	  LCD_DrawBox(184, 64, 48, 48, ORANGE);
-  	  pStr = "3.5mm";
-  	  LCD_DrawString_Color (192, 80, pStr, BACKGROUND, ORANGE);
-  }
+	if (inputSrc == 0) {
+		LCD_DrawBox(184, 64, 48, 48, GREEN);
+		pStr = "SD";
+		LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+  	} else {
+	  	LCD_DrawBox(184, 64, 48, 48, ORANGE);
+  	  	pStr = "3.5mm";
+  	  	LCD_DrawString_Color (192, 80, pStr, BACKGROUND, ORANGE);
+  	}
 
-  /* Title */
-  pStr = "Audio FX";
-  LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
-  while (1)
-  {
-	  /* Voice effect selection: This is put inside the while-loop for updating */
-	    pStr = "Voice effect";
-	    LCD_DrawString_Color (16, 120, pStr, BACKGROUND, BLACK);
+  	/* Title */
+  	pStr = "Audio FX";
+  	LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
+	while (1)
+	{
+		/* Voice effect selection: This is put inside the while-loop for updating */
+			pStr = "Voice effect";
+			LCD_DrawString_Color (16, 120, pStr, BACKGROUND, BLACK);
 
-	    pStr = "Selected";
-	    LCD_DrawString_Color (120, 120, pStr, BACKGROUND, GREEN);
+			pStr = "Selected";
+			LCD_DrawString_Color (120, 120, pStr, BACKGROUND, GREEN);
 
-	    if (fxMode == 11) {
-	  	  LCD_DrawBox(32, 142, 48, 48, GREEN);
-	  	  pStr = "No";
-	  	  LCD_DrawString_Color (34, 150, pStr, BACKGROUND, GREEN);
-	  	  pStr = "effect";
-	  	  LCD_DrawString_Color (34, 166, pStr, BACKGROUND, GREEN);
-	    }
-	    else {
-	  	  LCD_DrawBox(32, 142, 48, 48, BLACK);
-	  	  pStr = "No";
-	  	  LCD_DrawString_Color (34, 150, pStr, BACKGROUND, BLACK);
-	  	  pStr = "effect";
-	  	  LCD_DrawString_Color (34, 166, pStr, BACKGROUND, BLACK);
-	    }
+			if (fxMode == 11) {
+				LCD_DrawBox(32, 142, 48, 48, GREEN);
+				pStr = "No";
+				LCD_DrawString_Color (34, 150, pStr, BACKGROUND, GREEN);
+				pStr = "effect";
+				LCD_DrawString_Color (34, 166, pStr, BACKGROUND, GREEN);
+			}
+			else {
+				LCD_DrawBox(32, 142, 48, 48, BLACK);
+				pStr = "No";
+				LCD_DrawString_Color (34, 150, pStr, BACKGROUND, BLACK);
+				pStr = "effect";
+				LCD_DrawString_Color (34, 166, pStr, BACKGROUND, BLACK);
+			}
 
-	    if (fxMode == 12) {
-	  	  LCD_DrawBox(92, 142, 48, 48, GREEN);
-	  	  pStr = "Deep";
-	  	  LCD_DrawString_Color (94, 150, pStr, BACKGROUND, GREEN);
-	  	  pStr = "pitch";
-	  	  LCD_DrawString_Color (94, 166, pStr, BACKGROUND, GREEN);
-	    }
-	    else {
-	        LCD_DrawBox(92, 142, 48, 48, BLACK);
-	        pStr = "Deep";
-	        LCD_DrawString_Color (94, 150, pStr, BACKGROUND, BLACK);
-	        pStr = "pitch";
-	        LCD_DrawString_Color (94, 166, pStr, BACKGROUND, BLACK);
-	    }
+			if (fxMode == 12) {
+				LCD_DrawBox(92, 142, 48, 48, GREEN);
+				pStr = "Deep";
+				LCD_DrawString_Color (94, 150, pStr, BACKGROUND, GREEN);
+				pStr = "pitch";
+				LCD_DrawString_Color (94, 166, pStr, BACKGROUND, GREEN);
+			}
+			else {
+				LCD_DrawBox(92, 142, 48, 48, BLACK);
+				pStr = "Deep";
+				LCD_DrawString_Color (94, 150, pStr, BACKGROUND, BLACK);
+				pStr = "pitch";
+				LCD_DrawString_Color (94, 166, pStr, BACKGROUND, BLACK);
+			}
 
-	    if (fxMode == 13) {
-	  	  LCD_DrawBox(152, 142, 48, 48, GREEN);
-	  	  pStr = "High";
-	  	  LCD_DrawString_Color (154, 150, pStr, BACKGROUND, GREEN);
-	  	  pStr = "pitch";
-	  	  LCD_DrawString_Color (154, 166, pStr, BACKGROUND, GREEN);
-	    }
-	    else {
-	  	  LCD_DrawBox(152, 142, 48, 48, BLACK);
-	  	  pStr = "High";
-	  	  LCD_DrawString_Color (154, 150, pStr, BACKGROUND, BLACK);
-	  	  pStr = "pitch";
-	  	  LCD_DrawString_Color (154, 166, pStr, BACKGROUND, BLACK);
-	    }
+			if (fxMode == 13) {
+				LCD_DrawBox(152, 142, 48, 48, GREEN);
+				pStr = "High";
+				LCD_DrawString_Color (154, 150, pStr, BACKGROUND, GREEN);
+				pStr = "pitch";
+				LCD_DrawString_Color (154, 166, pStr, BACKGROUND, GREEN);
+			}
+			else {
+				LCD_DrawBox(152, 142, 48, 48, BLACK);
+				pStr = "High";
+				LCD_DrawString_Color (154, 150, pStr, BACKGROUND, BLACK);
+				pStr = "pitch";
+				LCD_DrawString_Color (154, 166, pStr, BACKGROUND, BLACK);
+			}
 
-	    if (fxMode == 21) {
-	  	  LCD_DrawBox(32, 198, 48, 48, GREEN);
-	  	  pStr = "Robot";
-	  	  LCD_DrawString_Color (34, 214, pStr, BACKGROUND, GREEN);
-	    }
-	    else {
-	  	  LCD_DrawBox(32, 198, 48, 48, BLACK);
-	  	  pStr = "Robot";
-	  	  LCD_DrawString_Color (34, 214, pStr, BACKGROUND, BLACK);
-	    }
+			if (fxMode == 21) {
+				LCD_DrawBox(32, 198, 48, 48, GREEN);
+				pStr = "Robot";
+				LCD_DrawString_Color (34, 214, pStr, BACKGROUND, GREEN);
+			}
+			else {
+				LCD_DrawBox(32, 198, 48, 48, BLACK);
+				pStr = "Robot";
+				LCD_DrawString_Color (34, 214, pStr, BACKGROUND, BLACK);
+			}
 
-	    if (fxMode == 22) {
-	  	  LCD_DrawBox(92, 198, 48, 48, GREEN);
-	  	  pStr = "Dino";
-	  	  LCD_DrawString_Color (94, 214, pStr, BACKGROUND, GREEN);
-	    }
-	    else {
-	  	  LCD_DrawBox(92, 198, 48, 48, BLACK);
-	  	  pStr = "Dino";
-	  	  LCD_DrawString_Color (94, 214, pStr, BACKGROUND, BLACK);
-	    }
+			if (fxMode == 22) {
+				LCD_DrawBox(92, 198, 48, 48, GREEN);
+				pStr = "Dino";
+				LCD_DrawString_Color (94, 214, pStr, BACKGROUND, GREEN);
+			}
+			else {
+				LCD_DrawBox(92, 198, 48, 48, BLACK);
+				pStr = "Dino";
+				LCD_DrawString_Color (94, 214, pStr, BACKGROUND, BLACK);
+			}
 
-	    if (fxMode == 23) {
-	  	  LCD_DrawBox(152, 198, 48, 48, GREEN);
-	  	  pStr = "R2-D2";
-	  	  LCD_DrawString_Color (154, 214, pStr, BACKGROUND, GREEN);
-	    }
-	    else {
-	  	  LCD_DrawBox(152, 198, 48, 48, BLACK);
-	  	  pStr = "R2-D2";
-	  	  LCD_DrawString_Color (154, 214, pStr, BACKGROUND, BLACK);
-	    }
+			if (fxMode == 23) {
+				LCD_DrawBox(152, 198, 48, 48, GREEN);
+				pStr = "R2-D2";
+				LCD_DrawString_Color (154, 214, pStr, BACKGROUND, GREEN);
+			}
+			else {
+				LCD_DrawBox(152, 198, 48, 48, BLACK);
+				pStr = "R2-D2";
+				LCD_DrawString_Color (154, 214, pStr, BACKGROUND, BLACK);
+			}
 
-	  // 乖乖
-	  if ( ucXPT2046_TouchFlag == 1 ) {
-	  	  actionFlag = audiofxConfig();
-	  	  ucXPT2046_TouchFlag = 0;
-	  	  switch (actionFlag) {
-	  	  	  case 0:
-	  	  		  LCD_Clear (0, 0, 240, 320, BACKGROUND);
-	  	  		  return;
-	  		  case 1:
-	  			  if (inputSrc == 0) {
-	  				  LCD_Clear (184, 64, 48, 48, BACKGROUND);
-	  				  LCD_DrawBox(184, 64, 48, 48, ORANGE);
-	  				  pStr = "3.5mm";
-	  				  LCD_DrawString_Color (144, 80, pStr, BACKGROUND, ORANGE);
-	  				  inputSrc++;
-	  			  } else {
-	  				  LCD_Clear (184, 64, 48, 48, BACKGROUND);
-	  				  LCD_DrawBox(184, 64, 48, 48, GREEN);
-	  				  pStr = "SD";
-	  				  LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN );
-	  				  inputSrc--;
-	  			  }
-	  			  break;
-	  		  // Toggle FX
-	  		  case 11: fxMode = 11; break;
-	  		  case 12: fxMode = 12; break;
-	  		  case 13: fxMode = 13; break;
-	  		  case 21: fxMode = 21; break;
-	  		  case 22: fxMode = 22; break;
-	  		  case 23: fxMode = 23; break;
-	  	  }
-	  }
-	  HAL_Delay(50);
-  }	
+		// 乖乖
+		if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = audiofxConfig();
+			ucXPT2046_TouchFlag = 0;
+			switch (actionFlag) {
+				case 0:
+					LCD_Clear (0, 0, 240, 320, BACKGROUND);
+					return;
+				case 1:
+					if (inputSrc == 0) {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, ORANGE);
+						pStr = "3.5mm";
+						LCD_DrawString_Color (144, 80, pStr, BACKGROUND, ORANGE);
+						inputSrc++;
+					} else {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, GREEN);
+						pStr = "SD";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN );
+						inputSrc--;
+					}
+					break;
+				// Toggle FX
+				case 11: fxMode = 11; break;
+				case 12: fxMode = 12; break;
+				case 13: fxMode = 13; break;
+				case 21: fxMode = 21; break;
+				case 22: fxMode = 22; break;
+				case 23: fxMode = 23; break;
+			}
+		}
+		HAL_Delay(50);
+	}	
 }
 
 void displayConfigPage(void)
 {
-  LCD_Clear (0, 0, 240, 320, BACKGROUND);
-  /* Button rendering */
-  LCD_DrawBox(8, 8, 48, 48, BLACK);
-  pStr = "BACK";
-  LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK );
+	LCD_Clear (0, 0, 240, 320, BACKGROUND);
+	/* Button rendering */
+	LCD_DrawBox(8, 8, 48, 48, BLACK);
+	pStr = "BACK";
+	LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK );
 
-  /* LDR brightness control */
-  pStr = "Auto";
-  LCD_DrawString_Color (16, 72, pStr, BACKGROUND, BLACK );
+	/* LDR brightness control */
+	pStr = "Auto";
+	LCD_DrawString_Color (16, 72, pStr, BACKGROUND, BLACK );
 
-  pStr = "Brightness";
-  LCD_DrawString_Color (16, 88, pStr, BACKGROUND, BLACK );
+	pStr = "Brightness";
+	LCD_DrawString_Color (16, 88, pStr, BACKGROUND, BLACK );
 
-  if (trueTone == 1) {
-  	  LCD_DrawBox(184, 64, 48, 48, GREEN);
-  	  pStr = "ON";
-  	  LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
-  } else {
-  	  LCD_DrawBox(184, 64, 48, 48, ORANGE);
-  	  pStr = "OFF";
-  	  LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
-  }
+	if (trueTone == 1) {
+		LCD_DrawBox(184, 64, 48, 48, GREEN);
+		pStr = "ON";
+		LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+	} else {
+		LCD_DrawBox(184, 64, 48, 48, ORANGE);
+		pStr = "OFF";
+		LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+	}
 
-  /* Breathing light */
-  LCD_DrawBox(184, 120, 48, 48, BLACK);
-  pStr = "Colour";
-  LCD_DrawString_Color (16, 128, pStr, BACKGROUND, BLACK);
+	/* Breathing light */
+	LCD_DrawBox(184, 120, 48, 48, BLACK);
+	pStr = "Colour";
+	LCD_DrawString_Color (16, 128, pStr, BACKGROUND, BLACK);
 
-  pStr = "preset";
-  LCD_DrawString_Color (16, 144, pStr, BACKGROUND, BLACK);
+	pStr = "preset";
+	LCD_DrawString_Color (16, 144, pStr, BACKGROUND, BLACK);
 
-  sprintf(cStr, "%d", colourP);
-  switch (colourP) {
-      case 0:
-        LCD_DrawBox(184, 120, 48, 48, RED);
-        LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, RED);
-        break;
-      case 1:
-        LCD_DrawBox(184, 120, 48, 48, ORANGE);
-        LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
-        break;
-      case 2:
-        LCD_DrawBox(184, 120, 48, 48, YELLOW);
-        LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, YELLOW);
-        break;
-      case 3:
-        LCD_DrawBox(184, 120, 48, 48, GREEN);
-        LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
-        break;
-      case 4:
-        LCD_DrawBox(184, 120, 48, 48, CYAN);
-        LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
-        break;
-      case 5:
-        LCD_DrawBox(184, 120, 48, 48, BLUE);
-        LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, BLUE);
-        break;
-      case 6:
-        LCD_DrawBox(184, 120, 48, 48, MAGENTA);
-        LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, MAGENTA);
-        break;
-  }
-  LCD_DrawBox(184, 176, 48, 48, BLACK);
-  pStr = "Start";
-  LCD_DrawString_Color (16, 184, pStr, BACKGROUND, BLACK);
+	sprintf(cStr, "%d", colourP);
+	switch (colourP) {
+		case 0:
+			LCD_DrawBox(184, 120, 48, 48, RED);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, RED);
+			break;
+		case 1:
+			LCD_DrawBox(184, 120, 48, 48, ORANGE);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
+			break;
+		case 2:
+			LCD_DrawBox(184, 120, 48, 48, YELLOW);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, YELLOW);
+			break;
+		case 3:
+			LCD_DrawBox(184, 120, 48, 48, GREEN);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
+			break;
+		case 4:
+			LCD_DrawBox(184, 120, 48, 48, CYAN);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
+			break;
+		case 5:
+			LCD_DrawBox(184, 120, 48, 48, BLUE);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, BLUE);
+			break;
+		case 6:
+			LCD_DrawBox(184, 120, 48, 48, MAGENTA);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, MAGENTA);
+			break;
+	}
+	LCD_DrawBox(184, 176, 48, 48, BLACK);
+	pStr = "Start";
+	LCD_DrawString_Color (16, 184, pStr, BACKGROUND, BLACK);
 
-  pStr = "RGB";
-  LCD_DrawString_Color (16, 200, pStr, BACKGROUND, BLACK);
+	pStr = "RGB";
+	LCD_DrawString_Color (16, 200, pStr, BACKGROUND, BLACK);
 
-  /* Title */
-  pStr = "Display options";
-  LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK);
-  while (1)
-  {
-    if ( ucXPT2046_TouchFlag == 1 ) {
-		actionFlag = backButton();
-      ucXPT2046_TouchFlag = 0;
-      switch (actionFlag) {
-        case 0:
-      	  LCD_Clear (0, 0, 240, 320, BACKGROUND);
-      	  return;
-        case 1:
-          if (trueTone == 0) {
-        	LCD_Clear (184, 64, 48, 48, BACKGROUND);
-        	LCD_DrawBox(184, 64, 48, 48, GREEN);
-        	pStr = "ON";
-        	LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
-        	trueTone++;
-          } else {
-        	LCD_Clear (184, 64, 48, 48, BACKGROUND);
-        	LCD_DrawBox(184, 64, 48, 48, ORANGE);
-        	pStr = "OFF";
-        	LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
-        	inputSrc--;
-          }
-          break;
-        case 2:
-      	  colourP = (colourP == 6) ? 0 : colourP + 1;
-      	  sprintf(cStr, "%d", colourP);
-      	  switch (colourP) {
-      	    case 0:
-      	      LCD_DrawBox(184, 120, 48, 48, RED);
-      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, RED);
-      	      break;
-      	    case 1:
-      	      LCD_DrawBox(184, 120, 48, 48, ORANGE);
-      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
-      	      break;
-      	    case 2:
-      	      LCD_DrawBox(184, 120, 48, 48, YELLOW);
-      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, YELLOW);
-      	      break;
-      	    case 3:
-      	      LCD_DrawBox(184, 120, 48, 48, GREEN);
-      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
-      	      break;
-      	    case 4:
-      	      LCD_DrawBox(184, 120, 48, 48, CYAN);
-      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
-      	      break;
-      	    case 5:
-      	      LCD_DrawBox(184, 120, 48, 48, BLUE);
-      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, BLUE);
-      	      break;
-      	    case 6:
-      	      LCD_DrawBox(184, 120, 48, 48, MAGENTA);
-      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, MAGENTA);
-      	      break;
-      	  }
-        case 3: threeFPSRGB(); break;
-      }
-    }					
-	  HAL_Delay(50);
-  }	
+	/* Title */
+	pStr = "Display options";
+	LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK);
+	while (1)
+	{
+		if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = backButton();
+			ucXPT2046_TouchFlag = 0;
+			switch (actionFlag) {
+				case 0:
+					LCD_Clear (0, 0, 240, 320, BACKGROUND);
+					return;
+				case 1:
+					if (trueTone == 0) {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, GREEN);
+						pStr = "ON";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+						trueTone++;
+					} else {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, ORANGE);
+						pStr = "OFF";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+						inputSrc--;
+					}
+					break;
+				case 2:
+					colourP = (colourP == 6) ? 0 : colourP + 1;
+					sprintf(cStr, "%d", colourP);
+					switch (colourP) {
+						case 0:
+							LCD_DrawBox(184, 120, 48, 48, RED);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, RED);
+							break;
+						case 1:
+							LCD_DrawBox(184, 120, 48, 48, ORANGE);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
+							break;
+						case 2:
+							LCD_DrawBox(184, 120, 48, 48, YELLOW);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, YELLOW);
+							break;
+						case 3:
+							LCD_DrawBox(184, 120, 48, 48, GREEN);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
+							break;
+						case 4:
+							LCD_DrawBox(184, 120, 48, 48, CYAN);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
+							break;
+						case 5:
+							LCD_DrawBox(184, 120, 48, 48, BLUE);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, BLUE);
+							break;
+						case 6:
+							LCD_DrawBox(184, 120, 48, 48, MAGENTA);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, MAGENTA);
+							break;
+					}
+				case 3: threeFPSRGB(); break;
+			}
+		}
+		HAL_Delay(50);
+	}	
 }
 
 void dvConfigPage(void)
 {
-  LCD_Clear (0, 0, 240, 320, BACKGROUND);
-  /* Button rendering */
-  LCD_DrawBox(8, 8, 48, 48, BLACK);
-  pStr = "BACK";
-  LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK );
+	LCD_Clear (0, 0, 240, 320, BACKGROUND);
+	/* Button rendering */
+	LCD_DrawBox(8, 8, 48, 48, BLACK);
+	pStr = "BACK";
+	LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK );
 
-  /* Toggle */
-  pStr = "Enable";
-  LCD_DrawString_Color (16, 72, pStr, BACKGROUND, BLACK );
+	/* Toggle */
+	pStr = "Enable";
+	LCD_DrawString_Color (16, 72, pStr, BACKGROUND, BLACK );
 
-  pStr = "effect";
-  LCD_DrawString_Color (16, 88, pStr, BACKGROUND, BLACK );
+	pStr = "effect";
+	LCD_DrawString_Color (16, 88, pStr, BACKGROUND, BLACK );
 
-  if (shock == 1) {
-      LCD_DrawBox(184, 64, 48, 48, GREEN);
-      pStr = "ON";
-      LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
-  } else {
-      LCD_DrawBox(184, 64, 48, 48, ORANGE);
-      pStr = "OFF";
-      LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
-  }
+	if (shock == 1) {
+		LCD_DrawBox(184, 64, 48, 48, GREEN);
+		pStr = "ON";
+		LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+	} else {
+		LCD_DrawBox(184, 64, 48, 48, ORANGE);
+		pStr = "OFF";
+		LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+	}
 
-  /* Peak strength */
-  pStr = "Max vibration";
-  LCD_DrawString_Color (16, 120, pStr, BACKGROUND, BLACK );
+	/* Peak strength */
+	pStr = "Max vibration";
+	LCD_DrawString_Color (16, 120, pStr, BACKGROUND, BLACK );
 
-  pStr = "strength";
-  LCD_DrawString_Color (16, 136, pStr, BACKGROUND, BLACK );
+	pStr = "strength";
+	LCD_DrawString_Color (16, 136, pStr, BACKGROUND, BLACK );
 
-  pStr = "1=Mild | 3=Strong";
-  LCD_DrawString_Color (16, 136, pStr, BACKGROUND, BLACK );
+	pStr = "1=Mild | 3=Strong";
+	LCD_DrawString_Color (16, 136, pStr, BACKGROUND, BLACK );
 
-  sprintf(cStr, "%d", buzz);
-  switch (buzz) {
-  	 case 1:
-  		 LCD_DrawBox(184, 120, 48, 48, CYAN);
-  		 LCD_DrawString_Color (204, 136, cStr, BACKGROUND, CYAN);
-  		 break;
-  	case 2:
-  		LCD_DrawBox(184, 120, 48, 48, GREEN);
-  		LCD_DrawString_Color (204, 136, cStr, BACKGROUND, GREEN);
-  		break;
-  	case 3:
-  		LCD_DrawBox(184, 120, 48, 48, ORANGE);
-  		LCD_DrawString_Color (204, 136, cStr, BACKGROUND, ORANGE);
-  		break;
-  }
+	sprintf(cStr, "%d", buzz);
+	switch (buzz) {
+		case 1:
+			LCD_DrawBox(184, 120, 48, 48, CYAN);
+			LCD_DrawString_Color (204, 136, cStr, BACKGROUND, CYAN);
+			break;
+		case 2:
+			LCD_DrawBox(184, 120, 48, 48, GREEN);
+			LCD_DrawString_Color (204, 136, cStr, BACKGROUND, GREEN);
+			break;
+		case 3:
+			LCD_DrawBox(184, 120, 48, 48, ORANGE);
+			LCD_DrawString_Color (204, 136, cStr, BACKGROUND, ORANGE);
+			break;
+	}
 
-  /* Title */
-  pStr = "Dynamic Vibration";
-  LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
+	/* Title */
+	pStr = "Dynamic Vibration";
+	LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
 
-  while (1)
-  {
-	  if ( ucXPT2046_TouchFlag == 1 ) {
-	    actionFlag = backButton();
-	    ucXPT2046_TouchFlag = 0;
-	    switch (actionFlag) {
-			case 0:
-				LCD_Clear (0, 0, 240, 320, BACKGROUND);
-				return;
-			case 1:		// Toggle
-				if (shock == 0) {
-				   LCD_Clear (184, 64, 48, 48, BACKGROUND);
-				   LCD_DrawBox(184, 64, 48, 48, GREEN);
-				   pStr = "ON";
-				   LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
-				   shock++;
-				} else {
-				   LCD_Clear (184, 64, 48, 48, BACKGROUND);
-				   LCD_DrawBox(184, 64, 48, 48, ORANGE);
-				   pStr = "OFF";
-				   LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
-				   shock--;
-				}
-				break;
-			case 2:		// Cascade
-			       buzz = (buzz == 3) ? 1 : buzz + 1;
-			      	  sprintf(cStr, "%d", buzz);
-			      	  switch (buzz) {
-			      	    case 1:
-			      	      LCD_DrawBox(184, 120, 48, 48, ORANGE);
-			      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
-			      	      break;
-			      	    case 2:
-			      	      LCD_DrawBox(184, 120, 48, 48, YELLOW);
-			      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
-			      	      break;
-			      	    case 3:
-			      	      LCD_DrawBox(184, 120, 48, 48, GREEN);
-			      	      LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
-			      	      break;
-			      	  }
-	    }
-	  }
-	  HAL_Delay(50);
-  }	
+	while (1)
+	{
+		if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = backButton();
+			ucXPT2046_TouchFlag = 0;
+			switch (actionFlag) {
+				case 0:
+					LCD_Clear (0, 0, 240, 320, BACKGROUND);
+					return;
+				case 1:		// Toggle
+					if (shock == 0) {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, GREEN);
+						pStr = "ON";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+						shock++;
+					} else {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, ORANGE);
+						pStr = "OFF";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+						shock--;
+					}
+					break;
+				case 2:		// Cascade
+					buzz = (buzz == 3) ? 1 : buzz + 1;
+					sprintf(cStr, "%d", buzz);
+					switch (buzz) {
+						case 1:
+							LCD_DrawBox(184, 120, 48, 48, CYAN);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
+							break;
+						case 2:
+							LCD_DrawBox(184, 120, 48, 48, GREEN);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
+							break;
+						case 3:
+							LCD_DrawBox(184, 120, 48, 48, ORANGE);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
+							break;
+					}
+			}
+		}
+		HAL_Delay(50);
+	}	
 }
 
 void hiddenConfigPage(void)
 {
-  LCD_Clear (0, 0, 240, 320, BACKGROUND);
-  /* Button rendering */
-  LCD_DrawBox(8, 8, 48, 48, BLACK);
-  pStr = "BACK";
-  LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
+	LCD_Clear (0, 0, 240, 320, BACKGROUND);
+	/* Button rendering */
+	LCD_DrawBox(8, 8, 48, 48, BLACK);
+	pStr = "BACK";
+	LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
 
-  /* Breathing light */
-  LCD_DrawBox(184, 64, 48, 48, BLACK);
-  pStr = "MLG";
-  LCD_DrawString_Color ( 16, 72, pStr, BACKGROUND, BLACK );
+	/* Breathing light */
+	LCD_DrawBox(184, 64, 48, 48, BLACK);
+	pStr = "MLG";
+	LCD_DrawString_Color ( 16, 72, pStr, BACKGROUND, BLACK );
 
-  pStr = "RGB";
-  LCD_DrawString_Color ( 16, 88, pStr, BACKGROUND, BLACK );
+	pStr = "RGB";
+	LCD_DrawString_Color ( 16, 88, pStr, BACKGROUND, BLACK );
 
-  /* Title */
-  pStr = "Advanced options";
-  LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
-  HAL_Delay(2000);
-  while (1)
-  {
-	colourP = 7;
-	threeFPSRGB();
-//    if ( ucXPT2046_TouchFlag == 1 ) {
-//      actionFlag = backButton();
-//      ucXPT2046_TouchFlag = 0;
-//      switch (actionFlag) {
-//		  case 0:
-//			  LCD_Clear (0, 0, 240, 320, BACKGROUND);
-//			  return;
-//		  case 1:
-//			  colourP = 7;
-//			  threeFPSRGB();
-//      }
-//    }
-	  HAL_Delay(50);
-  }	
+	/* Title */
+	pStr = "Advanced options";
+	LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
+	HAL_Delay(2000);
+	while (1)
+	{
+		colourP = 7;
+		threeFPSRGB();
+	//  if ( ucXPT2046_TouchFlag == 1 ) {
+	//	   actionFlag = backButton();
+	//	   ucXPT2046_TouchFlag = 0;
+	//	   switch (actionFlag) {
+	//		  case 0:
+	//		      LCD_Clear (0, 0, 240, 320, BACKGROUND);
+	//			  return;
+	//		  case 1:
+	//			  colourP = 7;
+	//			  threeFPSRGB();
+	//	      }
+	//     }
+		HAL_Delay(50);
+	}	
 }
 
 void threeFPSRGB(void)
@@ -779,114 +781,114 @@ void threeFPSRGB(void)
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_FSMC_Init();
-  MX_SDIO_SD_Init();
-  MX_FATFS_Init();
-  /* USER CODE BEGIN 2 */
-  macXPT2046_CS_DISABLE();
-  LCD_INIT();
-  /* Boot splash */
-  pStr = "Welcome to Stream Deck!";			
-  LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLACK );	
-  HAL_Delay(1000);
-  LCD_Clear(0, 0, 240, 320, BACKGROUND);
-//  while( ! XPT2046_Touch_Calibrate () );
-//  LCD_Clear(0, 0, 240, 320, BACKGROUND);
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_FSMC_Init();
+	MX_SDIO_SD_Init();
+	MX_FATFS_Init();
+	/* USER CODE BEGIN 2 */
+	macXPT2046_CS_DISABLE();
+	LCD_INIT();
+	/* Boot splash */
+	pStr = "Welcome to Stream Deck!";			
+	LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLACK );	
+	HAL_Delay(1000);
+	LCD_Clear(0, 0, 240, 320, BACKGROUND);
+//	while( ! XPT2046_Touch_Calibrate () );
+//	LCD_Clear(0, 0, 240, 320, BACKGROUND);
 
-  /* USER CODE END 2 */
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
-    /* Main menu */
-      pStr = "Stream Deck";			// Title
-	    LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1)
+	{
+		/* USER CODE END WHILE */
+		/* Main menu */
+		pStr = "Stream Deck";			// Title
+		LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
 
-	    /* Options rendering */
-	    LCD_DrawBox(176, 32, 48, 48, BLACK);
-	    pStr = "Audio FX";
-	    LCD_DrawString_Color (104, 48, pStr, BACKGROUND, BLACK );
-	    // pStr = "Audio";     // Replace me with the icon!
-	    // LCD_DrawString_Color (180, 48, pStr, BACKGROUND, BLACK );
-      LCD_DrawBox(184, 48, 8, 16, BLACK);
-      LCD_DrawEllipse (194, 56, 12, 6, BLACK);
-      LCD_DrawEllipse (202, 56, 16, 6, BLACK);
-      LCD_DrawEllipse (210, 56, 20, 6, BLACK);
+		/* Options rendering */
+		LCD_DrawBox(176, 32, 48, 48, BLACK);
+		pStr = "Audio FX";
+		LCD_DrawString_Color (104, 48, pStr, BACKGROUND, BLACK );
+		// pStr = "Audio";     // Replace me with the icon!
+		// LCD_DrawString_Color (180, 48, pStr, BACKGROUND, BLACK );
+		LCD_DrawBox(184, 48, 8, 16, BLACK);
+		LCD_DrawEllipse (194, 56, 12, 6, BLACK);
+		LCD_DrawEllipse (202, 56, 16, 6, BLACK);
+		LCD_DrawEllipse (210, 56, 20, 6, BLACK);
 
-	    LCD_DrawBox(176, 96, 48, 48, BLACK);
-	    pStr = "Display";
-	    LCD_DrawString_Color (112, 112, pStr, BACKGROUND, BLACK );
-	    // pStr = "Disp";     // Replace me with the icon!
-	    // LCD_DrawString_Color (180, 112, pStr, BACKGROUND, BLACK );
-      /* Icon */
-      // Vertical deco
-      LCD_DrawLine (200, 100, 200, 104, BLACK );
-	    LCD_DrawLine (200, 136, 200, 140, BLACK );
-      // Horizontal deco
-      LCD_DrawLine (216, 120, 220, 120, BLACK );
-	    LCD_DrawLine (180, 120, 184, 120, BLACK );
-      // Slanted deco
-      LCD_DrawLine (182, 102, 186, 106, BLACK );
-	    LCD_DrawLine (182, 138, 186, 134, BLACK );
-      LCD_DrawLine (218, 102, 214, 106, BLACK );
-	    LCD_DrawLine (218, 138, 214, 134, BLACK );
-	    LCD_DrawEllipse (200, 120, 12, 12, BLACK);
+		LCD_DrawBox(176, 96, 48, 48, BLACK);
+		pStr = "Display";
+		LCD_DrawString_Color (112, 112, pStr, BACKGROUND, BLACK );
+		// pStr = "Disp";     // Replace me with the icon!
+		// LCD_DrawString_Color (180, 112, pStr, BACKGROUND, BLACK );
+		/* Icon */
+		// Vertical deco
+		LCD_DrawLine (200, 100, 200, 104, BLACK );
+		LCD_DrawLine (200, 136, 200, 140, BLACK );
+		// Horizontal deco
+		LCD_DrawLine (216, 120, 220, 120, BLACK );
+		LCD_DrawLine (180, 120, 184, 120, BLACK );
+		// Slanted deco
+		LCD_DrawLine (182, 102, 186, 106, BLACK );
+		LCD_DrawLine (182, 138, 186, 134, BLACK );
+		LCD_DrawLine (218, 102, 214, 106, BLACK );
+		LCD_DrawLine (218, 138, 214, 134, BLACK );
+		LCD_DrawEllipse (200, 120, 12, 12, BLACK);
 
-	    LCD_DrawBox(176, 160, 48, 48, BLACK);
-	    pStr = "Dynamic Vibration";
-	    LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
-      /* Icon */
-      LCD_DrawBox(182, 166, 36, 36);
-	    LCD_DrawEllipse (200, 184, 12, 12, BLACK);
+		LCD_DrawBox(176, 160, 48, 48, BLACK);
+		pStr = "Dynamic Vibration";
+		LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
+		/* Icon */
+		LCD_DrawBox(182, 166, 36, 36, BLACK);
+		LCD_DrawEllipse (200, 184, 12, 12, BLACK);
 
-	    LCD_DrawBox(176, 224, 48, 48, BLACK);
-	    pStr = "Options";
-      /* Icon */
-	    LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
-	    LCD_DrawEllipse (200, 248, 12, 12, BLACK);
+		LCD_DrawBox(176, 224, 48, 48, BLACK);
+		pStr = "Options";
+		/* Icon */
+		LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
+		LCD_DrawEllipse (200, 248, 12, 12, BLACK);
 
-	    HAL_Delay(1000);
+		HAL_Delay(1000);
 
-	    // Main dish :)
-	    hiddenConfigPage();
-//	    if ( ucXPT2046_TouchFlag == 1 ) {
-//	            actionFlag = menuButton();
-//	            ucXPT2046_TouchFlag = 0;
-//	            switch (actionFlag) {
-//	              case 0: audiofxConfigPage(); break;
-//	              case 1: displayConfigPage(); break;
-//	              case 2: dvConfigPage(); break;
-//	              case 3: hiddenConfigPage(); break;
-//	            }
-//	          }
+		// Main dish :)
+		hiddenConfigPage();
+	//	if ( ucXPT2046_TouchFlag == 1 ) {
+	//	    actionFlag = menuButton();
+	//	    ucXPT2046_TouchFlag = 0;
+	//	    switch (actionFlag) {
+	//	        case 0: audiofxConfigPage(); break;
+	//	        case 1: displayConfigPage(); break;
+	//	        case 2: dvConfigPage(); break;
+	//	        case 3: hiddenConfigPage(); break;
+	//	    }
+	//	}
 
     /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+  	}
+ 	/* USER CODE END 3 */
 }
 
 /**
