@@ -210,6 +210,22 @@ void LCD_REG_Config ( void )
 	Delay ( 0xAFFf<<2 );
 	DEBUG_DELAY ();
 	
+	/* Custom brightness control */
+	// Read
+	// uint16_t deft;
+	// LCD_Write_Cmd ( 0x54 );
+	// LCD_Write_Cmd ( 0x52 );
+	// deft = LCD_Read_Data();			// Dummy read
+	// deft = LCD_Read_Data();			// Actual read
+	// DEBUG_DELAY ();
+
+	// Write
+	LCD_Write_Cmd ( 0x53 );		// Enable brightness control
+	LCD_Write_Data ( 0x2C );
+//	LCD_Write_Cmd ( 0x51 );		// Setting default brightness
+//	LCD_Write_Data ( 0xFF );
+	DEBUG_DELAY ();
+
 	/* Display ON (29h) */
 	LCD_Write_Cmd ( 0x29 ); 
 	
@@ -549,6 +565,26 @@ void LCD_DrawString_Color ( uint16_t usC, uint16_t usP, const char * pStr, uint1
 	
 }
 
+void adaptiveBrightness ( int trueTone, int ruler ) {
+	if (trueTone == 1) {
+		if (ruler >= 1440) {                    // Very bright
+			LCD_Write_Cmd ( 0x51 );		// Setting brightness
+			LCD_Write_Data ( 0xFF );
+		} else if (ruler >= 768) {              // Bright
+			LCD_Write_Cmd ( 0x51 );		// Setting brightness
+			LCD_Write_Data ( 0xCC );
+		} else if (ruler >= 256) {              // Medium
+			LCD_Write_Cmd ( 0x51 );		// Setting brightness
+			LCD_Write_Data ( 0x88 );
+		} else if (ruler >= 96) {               // Dark
+			LCD_Write_Cmd ( 0x51 );		// Setting brightness
+			LCD_Write_Data ( 0x44 );
+		} else {                                // Very dark
+			LCD_Write_Cmd ( 0x51 );		// Setting brightness
+			LCD_Write_Data ( 0x11 );
+		}
+	}
+}
 
 void LCD_GramScan ( uint8_t ucOption )
 {	

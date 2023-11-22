@@ -41,7 +41,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+extern int kay;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
