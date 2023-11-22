@@ -553,26 +553,27 @@ int backButton(void)				// Button handler for config screens (with back button)
 			/* Binary button handler */
 			if ( ( strDisplayCoordinate .y > 69 ) && ( strDisplayCoordinate .y < 107 ) )
 			{
-				GPIOB -> ODR ^= GPIO_PIN_0;
+//				GPIOB -> ODR ^= GPIO_PIN_0;
 				return 1;
 			}
 
 		/* Cascading button handler */
 			else if ( ( strDisplayCoordinate .y > 125 ) && ( strDisplayCoordinate .y < 163 ) )
 			{
-				GPIOB -> ODR ^= GPIO_PIN_1;
+//				GPIOB -> ODR ^= GPIO_PIN_1;
 				return 2;
 			}
 
 		/* Trigger button handler */
 			else if ( ( strDisplayCoordinate .y > 181 ) && ( strDisplayCoordinate .y < 219 ) )
 			{
-				GPIOB -> ODR ^= GPIO_PIN_5;
+//				GPIOB -> ODR ^= GPIO_PIN_5;
 				return 3;
 			}
 		}
 
 	}
+	return -1;
 }
 
 int audiofxConfig(void)				// Button handler for Audio FX config screen
@@ -597,7 +598,7 @@ int audiofxConfig(void)				// Button handler for Audio FX config screen
 			/* Binary button handler */
 			if ( ( strDisplayCoordinate .y > 69 ) && ( strDisplayCoordinate .y < 107 ) )
 			{
-				GPIOB -> ODR ^= GPIO_PIN_0;
+//				GPIOB -> ODR ^= GPIO_PIN_0;
 				return 1;
 			}
 		}
@@ -635,5 +636,6 @@ int audiofxConfig(void)				// Button handler for Audio FX config screen
 		}
 
 	}
+	return -1;
 }
 
