@@ -13,7 +13,6 @@
 extern unsigned int pcmBr;        
 extern unsigned int pcmDataToRead;
 extern uint16_t pcmBufferIndex;
-extern uint16_t pcmBuffer[DECODE_BUFFERSIZE];
 extern uint8_t playingFlag;
 
 void playPCMFile(char *filename);
