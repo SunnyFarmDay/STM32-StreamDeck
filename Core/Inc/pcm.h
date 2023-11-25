@@ -7,8 +7,7 @@
 #include "pcm.h"
 
 #define AUDIO_FREQUENCY        I2S_AUDIOFREQ_48K
-#define DECODE_BUFFERSIZE     4096
-#define PCM_BUFFERSIZE 128
+#define DECODE_BUFFERSIZE     1024*14
 
 extern unsigned int pcmBr;        
 extern unsigned int pcmDataToRead;
