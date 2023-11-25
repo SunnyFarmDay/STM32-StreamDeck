@@ -56,18 +56,18 @@ TIM_HandleTypeDef htim2;
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
-// float value = 0.2;
-// uint32_t var;
-// uint32_t sine_val[100];
+ float value = 0.2;
+ uint32_t var;
+ uint32_t sine_val[100];
 
-// #define PI 3.1415926
+ #define PI 3.1415926
 
-// void getSineVal() {
-// 	for (int i = 0; i < 100; i++) {
-// 		sine_val[i] = (((sin(i*2*PI/100)+1)*(255/2))*0.5);
+ void getSineVal() {
+ 	for (int i = 0; i < 100; i++) {
+ 		sine_val[i] = (((sin(i*2*PI/100)+1)*(255/2))*0.5);
 
-// 	}
-// }
+ 	}
+ }
 
 // void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //     if (htim->Instance == TIM1) {
@@ -80,7 +80,34 @@ SRAM_HandleTypeDef hsram1;
 //     }
 // }
 
-
+const uint16_t triangle_wave[]  = {
+0x400,0x800,0xc00,0x1000,0x1400,0x1800,0x1c00,0x2000,
+0x2400,0x2800,0x2c00,0x3000,0x3400,0x3800,0x3c00,0x4000,
+0x4400,0x4800,0x4c00,0x5000,0x5400,0x5800,0x5c00,0x6000,
+0x6400,0x6800,0x6c00,0x7000,0x7400,0x7800,0x7c00,0x8000,
+0x83ff,0x87ff,0x8bff,0x8fff,0x93ff,0x97ff,0x9bff,0x9fff,
+0xa3ff,0xa7ff,0xabff,0xafff,0xb3ff,0xb7ff,0xbbff,0xbfff,
+0xc3ff,0xc7ff,0xcbff,0xcfff,0xd3ff,0xd7ff,0xdbff,0xdfff,
+0xe3ff,0xe7ff,0xebff,0xefff,0xf3ff,0xf7ff,0xfbff,0xffff,
+0xfbff,0xf7ff,0xf3ff,0xefff,0xebff,0xe7ff,0xe3ff,0xdfff,
+0xdbff,0xd7ff,0xd3ff,0xcfff,0xcbff,0xc7ff,0xc3ff,0xbfff,
+0xbbff,0xb7ff,0xb3ff,0xafff,0xabff,0xa7ff,0xa3ff,0x9fff,
+0x9bff,0x97ff,0x93ff,0x8fff,0x8bff,0x87ff,0x83ff,0x8000,
+0x7c00,0x7800,0x7400,0x7000,0x6c00,0x6800,0x6400,0x6000,
+0x5c00,0x5800,0x5400,0x5000,0x4c00,0x4800,0x4400,0x4000,
+0x3c00,0x3800,0x3400,0x3000,0x2c00,0x2800,0x2400,0x2000,
+0x1c00,0x1800,0x1400,0x1000,0xc00,0x800,0x400,0x0,
+};
+const uint16_t sin_tbl_int[91] = {	    0,   572,  1144,  1715,  2286,  2856,  3425,  3993,  4560,  5126,
+									 5690,  6252,  6813,  7371,  7927,  8481,  9032,  9580, 10126, 10668,
+									11207, 11743, 12275, 12803, 13328, 13848, 14365, 14876, 15384, 15886,
+									16384, 16877, 17364, 17847, 18324, 18795, 19261, 19720, 20174, 20622,
+									21063, 21498, 21926, 22348, 22763, 23170, 23571, 23965, 24351, 24730,
+									25102, 25466, 25822, 26170, 26510, 26842, 27166, 27482, 27789, 28088,
+									28378, 28660, 28932, 29197, 29452, 29698, 29935, 30163, 30382, 30592,
+									30792, 30983, 31164, 31336, 31499, 31651, 31795, 31928, 32052, 32166,
+									32270, 32365, 32449, 32524, 32588, 32643, 32688, 32723, 32748, 32763,
+									32768 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -162,11 +189,11 @@ int main(void)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
 	}
 
-	scanFiles("0:/");
+//	scanFiles("0:/");
 
 //	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 
-//	getSineVal();
+	getSineVal();
 //	HAL_TIM_Base_Start(&htim1);
 	// HAL_TIM_Base_Start(&htim2);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -184,6 +211,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+//	  HAL_I2S_Transmit(&hi2s2, triangle_wave, sizeof(triangle_wave)/sizeof(triangle_wave[0]), 1000);
+		  HAL_I2S_Transmit(&hi2s2, sin_tbl_int, sizeof(sin_tbl_int)/sizeof(sin_tbl_int[0]), 1000);
   }
   /* USER CODE END 3 */
 }

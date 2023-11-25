@@ -8,7 +8,7 @@
 #include "pcm.h"
 
 #define AudioBitRate 32 //kbps
-#define DECODE_BUFFERSIZE 9216
+#define DECODE_BUFFERSIZE 2048
 
 extern unsigned int pcmBr;        
 extern unsigned int pcmDataToRead;
