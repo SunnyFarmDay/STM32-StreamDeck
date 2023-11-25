@@ -170,12 +170,12 @@ void HAL_I2S_MspInit(I2S_HandleTypeDef* hi2s)
     */
     GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     /* I2S2 DMA Init */
@@ -186,8 +186,8 @@ void HAL_I2S_MspInit(I2S_HandleTypeDef* hi2s)
     hdma_spi2_tx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_spi2_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
     hdma_spi2_tx.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    hdma_spi2_tx.Init.Mode = DMA_NORMAL;
-    hdma_spi2_tx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+    hdma_spi2_tx.Init.Mode = DMA_CIRCULAR;
+    hdma_spi2_tx.Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(&hdma_spi2_tx) != HAL_OK)
     {
       Error_Handler();

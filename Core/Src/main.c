@@ -118,8 +118,8 @@ static void MX_SDIO_SD_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_DMA_Init(void);
-static void MX_DAC_Init(void);
 static void MX_I2S2_Init(void);
+static void MX_DAC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -163,8 +163,8 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_DMA_Init();
-  MX_DAC_Init();
   MX_I2S2_Init();
+  MX_DAC_Init();
   /* USER CODE BEGIN 2 */
 	LCD_INIT();
 	FATFS myFATFS;
@@ -181,7 +181,7 @@ int main(void)
 		f_open(&myFILE, myPath, FA_WRITE |FA_CREATE_ALWAYS);
 		f_write(&myFILE, myData, sizeof(myData), &numberofbytes);
 		f_close(&myFILE);
-		HAL_Delay(1000);
+		 HAL_Delay(1000);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1,GPIO_PIN_RESET);
 	}
 	else
@@ -189,18 +189,19 @@ int main(void)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
 	}
 
-//	scanFiles("0:/");
+	scanFiles("0:/");
 
 //	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 
-	getSineVal();
+//	getSineVal();
 //	HAL_TIM_Base_Start(&htim1);
 	// HAL_TIM_Base_Start(&htim2);
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+//	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 //	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 
 	// HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, sine_val, 100, DAC_ALIGN_8B_R);
 
+  // HAL_I2S_Transmit_DMA(&hi2s2, sin_tbl_int, sizeof(sin_tbl_int)/sizeof(sin_tbl_int[0]));  
 
   /* USER CODE END 2 */
 
@@ -212,7 +213,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 //	  HAL_I2S_Transmit(&hi2s2, triangle_wave, sizeof(triangle_wave)/sizeof(triangle_wave[0]), 1000);
-		  HAL_I2S_Transmit(&hi2s2, sin_tbl_int, sizeof(sin_tbl_int)/sizeof(sin_tbl_int[0]), 1000);
+		  // HAL_I2S_Transmit(&hi2s2, sin_tbl_int, sizeof(sin_tbl_int)/sizeof(sin_tbl_int[0]), 1000);
   }
   /* USER CODE END 3 */
 }
@@ -331,7 +332,7 @@ static void MX_I2S2_Init(void)
   hi2s2.Init.Standard = I2S_STANDARD_PHILIPS;
   hi2s2.Init.DataFormat = I2S_DATAFORMAT_16B;
   hi2s2.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_32K;
+  hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_48K;
   hi2s2.Init.CPOL = I2S_CPOL_LOW;
   if (HAL_I2S_Init(&hi2s2) != HAL_OK)
   {
