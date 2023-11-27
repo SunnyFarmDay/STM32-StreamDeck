@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -51,6 +52,8 @@ SD_HandleTypeDef hsd;
 
 SRAM_HandleTypeDef hsram1;
 
+osThreadId GUITaskHandle;
+osThreadId AudioPlayTaskHandle;
 /* USER CODE BEGIN PV */
 /* Strings */
 char * pStr = 0, cStr [10];
@@ -70,6 +73,9 @@ static void MX_GPIO_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_SDIO_SD_Init(void);
 static void MX_ADC2_Init(void);
+void StartGUITask(void const * argument);
+void StartAudioPlayTask(void const * argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -225,7 +231,7 @@ void audiofxConfigPage(void)
 				case 23: fxMode = 23; break;
 			}
 		}
-		HAL_Delay(50);
+		osDelay(50);
 	}	
 }
 
@@ -373,7 +379,7 @@ void displayConfigPage(void)
 				case 3: threeFPSRGB(); return;
 			}
 		}
-		HAL_Delay(50);
+		osDelay(50);
 	}	
 }
 
@@ -478,7 +484,7 @@ void dvConfigPage(void)
 					}
 			}
 		}
-		HAL_Delay(50);
+		osDelay(50);
 	}	
 }
 
@@ -502,7 +508,7 @@ void hiddenConfigPage(void)
 	/* Title */
 	pStr = "Advanced options";
 	LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
-	HAL_Delay(2000);
+	osDelay(2000);
 	while (1)
 	{
 		ruler = HAL_ADC_GetValue(&hadc2);
@@ -523,7 +529,7 @@ void hiddenConfigPage(void)
 				    return;
 		    }
 	    }
-		HAL_Delay(50);
+		osDelay(50);
 	}	
 }
 
@@ -850,6 +856,39 @@ int main(void)
 
   /* USER CODE END 2 */
 
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of GUITask */
+  osThreadDef(GUITask, StartGUITask, osPriorityNormal, 0, 128);
+  GUITaskHandle = osThreadCreate(osThread(GUITask), NULL);
+
+  /* definition and creation of AudioPlayTask */
+  osThreadDef(AudioPlayTask, StartAudioPlayTask, osPriorityIdle, 0, 128);
+  AudioPlayTaskHandle = osThreadCreate(osThread(AudioPlayTask), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
@@ -857,71 +896,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	    ruler = HAL_ADC_GetValue(&hadc2);
-	  	adaptiveBrightness(trueTone, ruler);
-
-  		/* Main menu */
-  		pStr = "Stream Deck";			// Title
-  		LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
-
-  		/* Options rendering */
-  		LCD_DrawBox(176, 32, 48, 48, BLACK);
-  		pStr = "Audio FX";
-  		LCD_DrawString_Color (104, 48, pStr, BACKGROUND, BLACK );
-  		// pStr = "Audio";     // Replace me with the icon!
-  		// LCD_DrawString_Color (180, 48, pStr, BACKGROUND, BLACK );
-  		LCD_DrawBox(184, 48, 8, 16, BLACK);
-  		LCD_DrawEllipse (194, 56, 12, 6, BLACK);
-  		LCD_DrawEllipse (202, 56, 16, 6, BLACK);
-  		LCD_DrawEllipse (210, 56, 20, 6, BLACK);
-
-  		LCD_DrawBox(176, 96, 48, 48, BLACK);
-  		pStr = "Display";
-  		LCD_DrawString_Color (112, 112, pStr, BACKGROUND, BLACK );
-  		// pStr = "Disp";     // Replace me with the icon!
-  		// LCD_DrawString_Color (180, 112, pStr, BACKGROUND, BLACK );
-  		/* Icon */
-  		// Vertical deco
-  		LCD_DrawLine (200, 100, 200, 104, BLACK );
-  		LCD_DrawLine (200, 136, 200, 140, BLACK );
-  		// Horizontal deco
-  		LCD_DrawLine (216, 120, 220, 120, BLACK );
-  		LCD_DrawLine (180, 120, 184, 120, BLACK );
-  		// Slanted deco
-  		LCD_DrawLine (182, 102, 186, 106, BLACK );
-  		LCD_DrawLine (182, 138, 186, 134, BLACK );
-  		LCD_DrawLine (218, 102, 214, 106, BLACK );
-  		LCD_DrawLine (218, 138, 214, 134, BLACK );
-  		LCD_DrawEllipse (200, 120, 12, 12, BLACK);
-
-  		LCD_DrawBox(176, 160, 48, 48, BLACK);
-  		pStr = "Dynamic Vibration";
-  		LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
-  		/* Icon */
-  		LCD_DrawBox(182, 166, 36, 36, BLACK);
-  		LCD_DrawEllipse (200, 184, 12, 12, BLACK);
-
-  		LCD_DrawBox(176, 224, 48, 48, BLACK);
-  		pStr = "Options";
-  		/* Icon */
-  		LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
-  		LCD_DrawEllipse (200, 248, 12, 12, BLACK);
-
-  		HAL_Delay(1000);
-
-  		// Main dish :)
-		//  hiddenConfigPage();
-  		if ( ucXPT2046_TouchFlag == 1 ) {
-  		    actionFlag = menuButton();
-  		    ucXPT2046_TouchFlag = 0;
-  		    switch (actionFlag) {
-  		    	case 0: audiofxConfigPage(); break;
-  		    	case 1: displayConfigPage(); break;
-  		    	case 2: dvConfigPage(); break;
-  		    	case 3: hiddenConfigPage(); break;
-  		    }
-  		}
-    }
+	}
   /* USER CODE END 3 */
 }
 
@@ -1124,10 +1099,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 }
@@ -1192,6 +1167,106 @@ static void MX_FSMC_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartGUITask */
+/**
+  * @brief  Function implementing the GUITask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartGUITask */
+void StartGUITask(void const * argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+	    ruler = HAL_ADC_GetValue(&hadc2);
+	  	adaptiveBrightness(trueTone, ruler);
+
+		/* Main menu */
+		pStr = "Stream Deck";			// Title
+		LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
+
+		/* Options rendering */
+		LCD_DrawBox(176, 32, 48, 48, BLACK);
+		pStr = "Audio FX";
+		LCD_DrawString_Color (104, 48, pStr, BACKGROUND, BLACK );
+		// pStr = "Audio";     // Replace me with the icon!
+		// LCD_DrawString_Color (180, 48, pStr, BACKGROUND, BLACK );
+		LCD_DrawBox(184, 48, 8, 16, BLACK);
+		LCD_DrawEllipse (194, 56, 12, 6, BLACK);
+		LCD_DrawEllipse (202, 56, 16, 6, BLACK);
+		LCD_DrawEllipse (210, 56, 20, 6, BLACK);
+
+		LCD_DrawBox(176, 96, 48, 48, BLACK);
+		pStr = "Display";
+		LCD_DrawString_Color (112, 112, pStr, BACKGROUND, BLACK );
+		// pStr = "Disp";     // Replace me with the icon!
+		// LCD_DrawString_Color (180, 112, pStr, BACKGROUND, BLACK );
+		/* Icon */
+		// Vertical deco
+		LCD_DrawLine (200, 100, 200, 104, BLACK );
+		LCD_DrawLine (200, 136, 200, 140, BLACK );
+		// Horizontal deco
+		LCD_DrawLine (216, 120, 220, 120, BLACK );
+		LCD_DrawLine (180, 120, 184, 120, BLACK );
+		// Slanted deco
+		LCD_DrawLine (182, 102, 186, 106, BLACK );
+		LCD_DrawLine (182, 138, 186, 134, BLACK );
+		LCD_DrawLine (218, 102, 214, 106, BLACK );
+		LCD_DrawLine (218, 138, 214, 134, BLACK );
+		LCD_DrawEllipse (200, 120, 12, 12, BLACK);
+
+		LCD_DrawBox(176, 160, 48, 48, BLACK);
+		pStr = "Dynamic Vibration";
+		LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
+		/* Icon */
+		LCD_DrawBox(182, 166, 36, 36, BLACK);
+		LCD_DrawEllipse (200, 184, 12, 12, BLACK);
+
+		LCD_DrawBox(176, 224, 48, 48, BLACK);
+		pStr = "Options";
+		/* Icon */
+		LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
+		LCD_DrawEllipse (200, 248, 12, 12, BLACK);
+
+		osDelay(1000);
+
+		// Main dish :)
+		//  hiddenConfigPage();
+		if ( ucXPT2046_TouchFlag == 1 ) {
+		    actionFlag = menuButton();
+		    ucXPT2046_TouchFlag = 0;
+		    switch (actionFlag) {
+		    	case 0: audiofxConfigPage(); break;
+		    	case 1: displayConfigPage(); break;
+		    	case 2: dvConfigPage(); break;
+		    	case 3: hiddenConfigPage(); break;
+		    }
+		}
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartAudioPlayTask */
+/**
+* @brief Function implementing the AudioPlayTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartAudioPlayTask */
+void StartAudioPlayTask(void const * argument)
+{
+  /* USER CODE BEGIN StartAudioPlayTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartAudioPlayTask */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
