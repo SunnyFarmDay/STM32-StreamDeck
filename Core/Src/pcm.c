@@ -8,13 +8,18 @@ uint16_t pcmBufferIndex = 0;
 int16_t pcmBuffer[DECODE_BUFFERSIZE];
 int16_t* inBuffer;
 uint8_t fillingBuffer = 0;
-uint8_t playingFlag = 0;
-uint8_t fillBufFlag = 0;
 FIL file;
 uint8_t res;
 float sampleRate = 44100.0; // Sample rate of the audio data
 float pitchFactor = 1.5; // Adjust this value to change the pitch
 uint16_t maxVolume = 1000;
+
+uint8_t nextSongFlag = 0;
+uint8_t continueFlag = 0;
+uint8_t pauseFlag = 0;
+uint8_t startFlag = 0;
+uint8_t playingFlag = 0;
+uint8_t fillBufFlag = 0;
 
 float volume = 0.2;
 
@@ -142,6 +147,9 @@ void playPCMFile(char *filename) {
     playPCMFileInit(filename);
     while (playingFlag)
     {
+    	if (nextSongFlag == 1) {
+            break;
+    	}
         if (fillBufFlag)
         {
             res = f_read(&file, inBuffer, DECODE_BUFFERSIZE, &pcmBr);
@@ -152,11 +160,13 @@ void playPCMFile(char *filename) {
             // distorted(inBuffer, DECODE_BUFFERSIZE / 2);
             if (res != FR_OK)
             {
+                nextSongFlag = 1;
                 playingFlag = 0;
                 break;
             }
             if (pcmBr == 0)
             {
+                nextSongFlag = 1;
                 playingFlag = 0;
                 break;
             }

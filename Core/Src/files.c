@@ -28,10 +28,11 @@ FRESULT scanFiles(char* path) {
             
             if (fno.fattrib & AM_DIR) {
                 sprintf(PathBUF, "%s/%s", path, fno.fname);
-                res = scanFiles(path);
-                if (res != FR_OK) {
-                    break;
-                }
+                continue;
+                // res = scanFiles(path);
+                // if (res != FR_OK) {
+                //     break;
+                // }
             } else {
                 if (strstr(fno.fname, ".mp3") != NULL || strstr(fno.fname, ".MP3") != NULL) {
                     sprintf(PathBUF, "%s/%s", path, fno.fname);
