@@ -76,17 +76,19 @@ SRAM_HandleTypeDef hsram1;
  }
  uint8_t updateLCDStartPlay = 1;
  uint8_t playPCMFlag = 0;
- uint8_t drawGUIFlag = 1;
- uint8_t drawButtonsFlag = 1;
+ // Definition refreshed below!
+ // uint8_t drawGUIFlag = 1;
+ // uint8_t drawButtonsFlag = 1;
  void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == GPIO_PIN_0) {
     kay = 1;
   }
 	if (GPIO_Pin == GPIO_PIN_13) {
 		playPCMFlag = playPCMFlag == 0 ? 1 : 0;
-		if (!playPCMFlag) {
-			drawGUIFlag = 1;
-		}
+		// No longer used!
+//		if (!playPCMFlag) {
+//			drawGUIFlag = 1;
+//		}
 //		updateLCDStartPlay = 1;
  	}
 }
@@ -135,8 +137,9 @@ char * pStr = 0, cStr [10];
 
 /* Flags */
 uint16_t actionFlag = 0, drawGUIFlag = 0, drawButtonsFlag = 0;
-uint16_t inputSrc = 0 /* 0 = SD | 1 = 3.5mm */, fxMode = 11;		// See xpt2046.c \ audiofxConfig()
-uint16_t kay = 0 /* K1 flag */, kerry = 0 /* K2 flag */, trueTone = 0 /* LDR trigger */, colourP = 0;	// Display colour preset
+uint16_t inputSrc = 0 /* 0 = SD | 1 = 3.5mm */;		// See xpt2046.c \ audiofxConfig()
+int kay = 0 /* K1 flag */, kerry = 0 /* K2 flag */;
+uint16_t trueTone = 0 /* LDR trigger */, colourP = 0;	// Display colour preset
 uint16_t shock = 0 /* Dynamic vibration trigger */, buzz = 1;	// 1 = Mildest | 3 = Strongest
 uint16_t intensity = 0;		// I store the value of getAudioIntensity()
 uint16_t ruler;		// ADC2
@@ -226,6 +229,7 @@ int main(void)
 
   /* USER CODE END SysInit */
 
+  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_FSMC_Init();
   MX_SDIO_SD_Init();
@@ -235,7 +239,6 @@ int main(void)
   MX_DMA_Init();
   MX_I2S2_Init();
   MX_ADC2_Init();
-  
   /* USER CODE BEGIN 2 */
 	FATFS myFATFS;
 	FIL myFILE;
@@ -278,15 +281,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
     {
-    	/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-        /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 		goto mainMenu;
 		
 		if (!virtualAudioPlayerTask()) {
 			// drawGUIFlag is only used in configMenu and mainMenu labels that use just one label to render everything
 			// Labels ending with "Begin" are only rendered once, so drawButtonsFlag isn't necessary
-    	label audiofxConfigPageBegin:
+    	audiofxConfigPageBegin:
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -319,7 +322,7 @@ int main(void)
 			pStr = "Audio FX";
 			LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
 			
-			label audiofxConfigPageRender:
+			audiofxConfigPageRender:
 			/**
 			 * Adding the justification here for subsequent code snippets:
 			 * For the adaptive brightness feature to work properly,
@@ -414,7 +417,7 @@ int main(void)
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							LCD_Clear (0, 0, 240, 320, BACKGROUND);
+							drawGUIFlag = 0;
 							goto configMenu;
 						case 1:
 							if (inputSrc == 0) {
@@ -443,7 +446,7 @@ int main(void)
 				HAL_Delay(100);
 				goto audiofxConfigPageRender;
 
-		label displayConfigPageBegin:
+		displayConfigPageBegin:
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -518,7 +521,7 @@ int main(void)
 			pStr = "Display options";
 			LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK);
 
-			label displayConfigPageRender:
+			displayConfigPageRender:
 				// Showing LDR value on screen
 				// sprintf(chovy, "%x",  ruler);
 				// LCD_Clear(128, 88, 48, 16, BACKGROUND);
@@ -590,7 +593,7 @@ int main(void)
 				HAL_Delay(100);
 				goto displayConfigPageRender;
 
-		label dvConfigPageBegin:
+		dvConfigPageBegin:
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -645,7 +648,7 @@ int main(void)
 			pStr = "Dynamic Vibration";
 			LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
 
-			label dvConfigPageRender:
+			dvConfigPageRender:
 				ruler = HAL_ADC_GetValue(&hadc2);
 				adaptiveBrightness(trueTone, ruler);
 				if ( ucXPT2046_TouchFlag == 1 ) {
@@ -692,7 +695,7 @@ int main(void)
 				HAL_Delay(100);
 				goto dvConfigPageRender;
 
-		label hiddenConfigPageBegin:
+		hiddenConfigPageBegin:
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -712,7 +715,7 @@ int main(void)
 			pStr = "Advanced options";
 			LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
 
-			label hiddenConfigPageRender:
+			hiddenConfigPageRender:
 				ruler = HAL_ADC_GetValue(&hadc2);
 				adaptiveBrightness(trueTone, ruler);
 
@@ -721,8 +724,8 @@ int main(void)
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							LCD_Clear (0, 0, 240, 320, BACKGROUND);
-							goto mainMenu;;
+							drawGUIFlag = 0;
+							goto configMenu;
 						case 1:
 							colourP = 7;
 							goto threeFPSRGB;
@@ -731,7 +734,7 @@ int main(void)
 				HAL_Delay(100);
 				goto hiddenConfigPageRender;
 
-		label threeFPSRGB:
+		threeFPSRGB:
 			ruler = HAL_ADC_GetValue(&hadc2);
 			adaptiveBrightness(trueTone, ruler);
 
@@ -1004,7 +1007,7 @@ int main(void)
 			HAL_Delay(100);
 			goto threeFPSRGB;
 
-		label configMenu:
+		configMenu:
 			ruler = HAL_ADC_GetValue(&hadc2);
 			adaptiveBrightness(trueTone, ruler);
 
@@ -1041,9 +1044,9 @@ int main(void)
 				LCD_DrawLine (216, 152, 220, 152, BLACK );
 				LCD_DrawLine (180, 152, 184, 152, BLACK );
 				// Slanted deco
-				LCD_DrawLine (182, 154, 186, 158, BLACK );
+				LCD_DrawLine (182, 134, 186, 138, BLACK );
 				LCD_DrawLine (182, 170, 186, 166, BLACK );
-				LCD_DrawLine (218, 154, 214, 158, BLACK );
+				LCD_DrawLine (218, 134, 214, 138, BLACK );
 				LCD_DrawLine (218, 170, 214, 166, BLACK );
 				LCD_DrawEllipse (200, 152, 12, 12, BLACK);
 
@@ -1077,7 +1080,7 @@ int main(void)
 			HAL_Delay(100);
 			goto configMenu;
 		
-		label mainMenu:
+		mainMenu:
 			ruler = HAL_ADC_GetValue(&hadc2);
 			adaptiveBrightness(trueTone, ruler);
 
@@ -1118,13 +1121,13 @@ int main(void)
 				pStr = "Play/Pause";
 				LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
 				/* Icon */
-				LCD_DrawLine(196, 172, 196, 196, BLACK);
-				LCD_DrawLine(196, 172, 216, 184, BLACK);
-				LCD_DrawLine(196, 196, 216, 184, BLACK);
+				LCD_DrawLine(192, 172, 192, 196, BLACK);
+				LCD_DrawLine(192, 172, 212, 184, BLACK);
+				LCD_DrawLine(192, 196, 212, 184, BLACK);
 
 				LCD_DrawBox(176, 224, 48, 48, BLACK);
 				pStr = "Config";
-				LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
+				LCD_DrawString_Color (32, 240, pStr, BACKGROUND, BLACK );
 				/* Icon */
 				// Vertical deco
 				LCD_DrawLine (200, 228, 200, 232, BLACK );
@@ -1199,7 +1202,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_I2S2;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   PeriphClkInit.I2s2ClockSelection = RCC_I2S2CLKSOURCE_SYSCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -1472,7 +1475,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PE4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
