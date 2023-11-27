@@ -28,7 +28,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "pcm.h"
-#include "lcd.h"
+#include "lcdtp.h"
 #include "main.h"
 
 /* USER CODE END Includes */

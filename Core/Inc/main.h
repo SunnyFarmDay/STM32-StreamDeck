@@ -47,7 +47,7 @@ extern uint8_t playPCMFlag;
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+extern int kay;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

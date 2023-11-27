@@ -22,9 +22,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "lcd.h"
 #include "files.h"
 #include "math.h"
+#include "pcm.h"
+#include <stdio.h>
+#include <string.h>
+#include "lcdtp.h"
+#include "xpt2046.h"
 #include "pcm.h"
 /* USER CODE END Includes */
 
@@ -35,6 +39,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define usScreenWidth 240
+#define usScreenHeight 320
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -70,10 +76,18 @@ SRAM_HandleTypeDef hsram1;
  }
  uint8_t updateLCDStartPlay = 1;
  uint8_t playPCMFlag = 0;
+ uint8_t drawGUIFlag = 1;
+ uint8_t drawButtonsFlag = 1;
  void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin == GPIO_PIN_0) {
+    kay = 1;
+  }
 	if (GPIO_Pin == GPIO_PIN_13) {
-		updateLCDStartPlay = 1;
-		playPCMFlag = 1;
+		playPCMFlag = playPCMFlag == 0 ? 1 : 0;
+		if (!playPCMFlag) {
+			drawGUIFlag = 1;
+		}
+//		updateLCDStartPlay = 1;
  	}
 }
 
@@ -116,6 +130,16 @@ const uint16_t sin_tbl_int[91] = {	    0,   572,  1144,  1715,  2286,  2856,  34
 									30792, 30983, 31164, 31336, 31499, 31651, 31795, 31928, 32052, 32166,
 									32270, 32365, 32449, 32524, 32588, 32643, 32688, 32723, 32748, 32763,
 									32768 };
+/* Strings */
+char * pStr = 0, cStr [10];
+
+/* Flags */
+int actionFlag = 0;
+int inputSrc = 0 /* 0 = SD | 1 = 3.5mm */;		// See xpt2046.c \ audiofxConfig()
+int kay = 0 /* K1 flag */, trueTone = 0 /* LDR trigger */, colourP = 0;	// Display colour preset
+int shock = 0 /* Dynamic vibration trigger */, buzz = 1;	// 1 = Mildest | 3 = Strongest
+int ruler;		// ADC2
+char chovy[3];	// ADC2 Read buffer
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -129,11 +153,770 @@ static void MX_DMA_Init(void);
 static void MX_I2S2_Init(void);
 static void MX_ADC2_Init(void);
 /* USER CODE BEGIN PFP */
-
+uint8_t virtualAudioPlayerTask() {
+	if (playPCMFlag) {
+		// LCD_Clear (0, 0, 240, 320, BACKGROUND);
+		scanFiles("0:/");
+		return 1;
+	} else {
+		return 0;
+	}
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
+void threeFPSRGB(void);
+
+void audiofxConfigPage(void)
+{
+
+  	/* Title */
+  	pStr = "Audio FX";
+  	LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
+	drawGUIFlag = 1;
+	while (1)
+	{
+		if (!virtualAudioPlayerTask()) {
+			if (drawGUIFlag) {
+				drawGUIFlag = 0;
+				LCD_Clear (0, 0, 240, 320, BACKGROUND);
+
+				/* Button rendering */
+				LCD_DrawBox(8, 8, 48, 48, BLACK);
+				pStr = "BACK";
+				LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK);
+
+				/* Input source selection */
+				LCD_DrawBox(184, 64, 48, 48, GREEN);
+				pStr = "Input source";
+				LCD_DrawString_Color (16, 80, pStr, BACKGROUND, BLACK);
+
+				if (inputSrc == 0) {
+					LCD_DrawBox(184, 64, 48, 48, GREEN);
+					pStr = "SD";
+					LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+				} else {
+					LCD_DrawBox(184, 64, 48, 48, ORANGE);
+					pStr = "3.5mm";
+					LCD_DrawString_Color (192, 80, pStr, BACKGROUND, ORANGE);
+				}
+				ruler = HAL_ADC_GetValue(&hadc2);
+				adaptiveBrightness(trueTone, ruler);
+			}
+			if (drawButtonsFlag) {
+				drawButtonsFlag = 0;
+				/* Voice effect selection: This is put inside the while-loop for updating */
+				pStr = "Voice effect";
+				LCD_DrawString_Color (16, 120, pStr, BACKGROUND, BLACK);
+
+				pStr = "Selected";
+				LCD_DrawString_Color (120, 120, pStr, BACKGROUND, GREEN);
+
+				if (fxMode == 11) {
+					LCD_DrawBox(32, 142, 48, 48, GREEN);
+					pStr = "No";
+					LCD_DrawString_Color (34, 150, pStr, BACKGROUND, GREEN);
+					pStr = "effect";
+					LCD_DrawString_Color (34, 166, pStr, BACKGROUND, GREEN);
+				}
+				else {
+					LCD_DrawBox(32, 142, 48, 48, BLACK);
+					pStr = "No";
+					LCD_DrawString_Color (34, 150, pStr, BACKGROUND, BLACK);
+					pStr = "effect";
+					LCD_DrawString_Color (34, 166, pStr, BACKGROUND, BLACK);
+				}
+
+				if (fxMode == 12) {
+					LCD_DrawBox(92, 142, 48, 48, GREEN);
+					pStr = "Deep";
+					LCD_DrawString_Color (94, 150, pStr, BACKGROUND, GREEN);
+					pStr = "pitch";
+					LCD_DrawString_Color (94, 166, pStr, BACKGROUND, GREEN);
+				}
+				else {
+					LCD_DrawBox(92, 142, 48, 48, BLACK);
+					pStr = "Deep";
+					LCD_DrawString_Color (94, 150, pStr, BACKGROUND, BLACK);
+					pStr = "pitch";
+					LCD_DrawString_Color (94, 166, pStr, BACKGROUND, BLACK);
+				}
+
+				if (fxMode == 13) {
+					LCD_DrawBox(152, 142, 48, 48, GREEN);
+					pStr = "High";
+					LCD_DrawString_Color (154, 150, pStr, BACKGROUND, GREEN);
+					pStr = "pitch";
+					LCD_DrawString_Color (154, 166, pStr, BACKGROUND, GREEN);
+				}
+				else {
+					LCD_DrawBox(152, 142, 48, 48, BLACK);
+					pStr = "High";
+					LCD_DrawString_Color (154, 150, pStr, BACKGROUND, BLACK);
+					pStr = "pitch";
+					LCD_DrawString_Color (154, 166, pStr, BACKGROUND, BLACK);
+				}
+
+				if (fxMode == 21) {
+					LCD_DrawBox(32, 198, 48, 48, GREEN);
+					pStr = "Robot";
+					LCD_DrawString_Color (34, 214, pStr, BACKGROUND, GREEN);
+				}
+				else {
+					LCD_DrawBox(32, 198, 48, 48, BLACK);
+					pStr = "Robot";
+					LCD_DrawString_Color (34, 214, pStr, BACKGROUND, BLACK);
+				}
+
+				if (fxMode == 22) {
+					LCD_DrawBox(92, 198, 48, 48, GREEN);
+					pStr = "Dino";
+					LCD_DrawString_Color (94, 214, pStr, BACKGROUND, GREEN);
+				}
+				else {
+					LCD_DrawBox(92, 198, 48, 48, BLACK);
+					pStr = "Dino";
+					LCD_DrawString_Color (94, 214, pStr, BACKGROUND, BLACK);
+				}
+
+				if (fxMode == 23) {
+					LCD_DrawBox(152, 198, 48, 48, GREEN);
+					pStr = "R2-D2";
+					LCD_DrawString_Color (154, 214, pStr, BACKGROUND, GREEN);
+				}
+				else {
+					LCD_DrawBox(152, 198, 48, 48, BLACK);
+					pStr = "R2-D2";
+					LCD_DrawString_Color (154, 214, pStr, BACKGROUND, BLACK);
+				}
+			}
+
+		if ( ucXPT2046_TouchFlag == 1 ) {
+			drawButtonsFlag = 1;
+			actionFlag = audiofxConfig();
+			ucXPT2046_TouchFlag = 0;
+			switch (actionFlag) {
+				case 0:
+					LCD_Clear (0, 0, 240, 320, BACKGROUND);
+					return;
+				case 1:
+					if (inputSrc == 0) {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, ORANGE);
+						pStr = "3.5mm";
+						LCD_DrawString_Color (192, 80, pStr, BACKGROUND, ORANGE);
+						inputSrc++;
+					} else {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, GREEN);
+						pStr = "SD";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN );
+						inputSrc--;
+					}
+					break;
+				// Toggle FX
+				case 11: fxMode = 11; break;
+				case 12: fxMode = 12; break;
+				case 13: fxMode = 13; break;
+				case 21: fxMode = 21; break;
+				case 22: fxMode = 22; break;
+				case 23: fxMode = 23; break;
+			}
+		}
+
+		}
+		// HAL_Delay(50);
+	}	
+}
+
+void displayConfigPage(void)
+{
+	drawGUIFlag = 1;
+	LCD_Clear (0, 0, 240, 320, BACKGROUND);
+
+	/* Button rendering */
+	LCD_DrawBox(8, 8, 48, 48, BLACK);
+	pStr = "BACK";
+	LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK );
+
+	/* LDR brightness control */
+	pStr = "Auto";
+	LCD_DrawString_Color (16, 72, pStr, BACKGROUND, BLACK );
+
+	pStr = "Brightness";
+	LCD_DrawString_Color (16, 88, pStr, BACKGROUND, BLACK );
+
+//  Showing LDR value on screen
+	sprintf(chovy, "%x",  ruler);
+	LCD_Clear(128, 88, 48, 16, BACKGROUND);
+	LCD_DrawString(128, 88, chovy);
+
+	if (trueTone == 1) {
+		LCD_DrawBox(184, 64, 48, 48, GREEN);
+		pStr = "ON";
+		LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+	} else {
+		LCD_DrawBox(184, 64, 48, 48, ORANGE);
+		pStr = "OFF";
+		LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+	}
+
+	/* Breathing light */
+	LCD_DrawBox(184, 120, 48, 48, BLACK);
+	pStr = "Colour";
+	LCD_DrawString_Color (16, 128, pStr, BACKGROUND, BLACK);
+
+	pStr = "preset";
+	LCD_DrawString_Color (16, 144, pStr, BACKGROUND, BLACK);
+
+	sprintf(cStr, "%d", colourP);
+	switch (colourP) {
+		case 0:
+			LCD_DrawBox(184, 120, 48, 48, RED);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, RED);
+			break;
+		case 1:
+			LCD_DrawBox(184, 120, 48, 48, ORANGE);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
+			break;
+		case 2:
+			LCD_DrawBox(184, 120, 48, 48, YELLOW);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, YELLOW);
+			break;
+		case 3:
+			LCD_DrawBox(184, 120, 48, 48, GREEN);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
+			break;
+		case 4:
+			LCD_DrawBox(184, 120, 48, 48, CYAN);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
+			break;
+		case 5:
+			LCD_DrawBox(184, 120, 48, 48, BLUE);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, BLUE);
+			break;
+		case 6:
+			LCD_DrawBox(184, 120, 48, 48, MAGENTA);
+			LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, MAGENTA);
+			break;
+	}
+	LCD_DrawBox(184, 176, 48, 48, BLACK);
+	pStr = "Start";
+	LCD_DrawString_Color (16, 184, pStr, BACKGROUND, BLACK);
+
+	pStr = "RGB";
+	LCD_DrawString_Color (16, 200, pStr, BACKGROUND, BLACK);
+
+	/* Title */
+	pStr = "Display options";
+	LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK);
+	while (1)
+	{
+		ruler = HAL_ADC_GetValue(&hadc2);
+		adaptiveBrightness(trueTone, ruler);
+
+		if ( ucXPT2046_TouchFlag == 1 ) {
+			actionFlag = backButton();
+			ucXPT2046_TouchFlag = 0;
+			switch (actionFlag) {
+				case 0:
+					LCD_Clear (0, 0, 240, 320, BACKGROUND);
+					return;
+				case 1:
+					if (trueTone == 0) {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, GREEN);
+						pStr = "ON";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+						trueTone++;
+					} else {
+						LCD_Clear (184, 64, 48, 48, BACKGROUND);
+						LCD_DrawBox(184, 64, 48, 48, ORANGE);
+						pStr = "OFF";
+						LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+						inputSrc--;
+					}
+					break;
+				case 2:
+					colourP = (colourP == 6) ? 0 : colourP + 1;
+					sprintf(cStr, "%d", colourP);
+					switch (colourP) {
+						case 0:
+							LCD_DrawBox(184, 120, 48, 48, RED);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, RED);
+							break;
+						case 1:
+							LCD_DrawBox(184, 120, 48, 48, ORANGE);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
+							break;
+						case 2:
+							LCD_DrawBox(184, 120, 48, 48, YELLOW);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, YELLOW);
+							break;
+						case 3:
+							LCD_DrawBox(184, 120, 48, 48, GREEN);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
+							break;
+						case 4:
+							LCD_DrawBox(184, 120, 48, 48, CYAN);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
+							break;
+						case 5:
+							LCD_DrawBox(184, 120, 48, 48, BLUE);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, BLUE);
+							break;
+						case 6:
+							LCD_DrawBox(184, 120, 48, 48, MAGENTA);
+							LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, MAGENTA);
+							break;
+					}
+					break;
+				case 3: threeFPSRGB(); return;
+			}
+		}
+		// HAL_Delay(50);
+	}	
+}
+
+void dvConfigPage(void)
+{
+	drawGUIFlag = 1;
+	while (1)
+	{
+		if (!virtualAudioPlayerTask()) {
+			if (drawGUIFlag) {
+				drawGUIFlag = 0;
+				LCD_Clear (0, 0, 240, 320, BACKGROUND);
+
+				/* Button rendering */
+				LCD_DrawBox(8, 8, 48, 48, BLACK);
+				pStr = "BACK";
+				LCD_DrawString_Color (16, 24, pStr, BACKGROUND, BLACK );
+
+				/* Toggle */
+				pStr = "Enable";
+				LCD_DrawString_Color (16, 72, pStr, BACKGROUND, BLACK );
+
+				pStr = "effect";
+				LCD_DrawString_Color (16, 88, pStr, BACKGROUND, BLACK );
+
+				if (shock == 1) {
+					LCD_DrawBox(184, 64, 48, 48, GREEN);
+					pStr = "ON";
+					LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+				} else {
+					LCD_DrawBox(184, 64, 48, 48, ORANGE);
+					pStr = "OFF";
+					LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+
+				/* Peak strength */
+				pStr = "Max vibration";
+				LCD_DrawString_Color (16, 120, pStr, BACKGROUND, BLACK );
+
+				pStr = "strength";
+				LCD_DrawString_Color (16, 136, pStr, BACKGROUND, BLACK );
+
+				pStr = "1=Mild | 3=Strong";
+				LCD_DrawString_Color (16, 136, pStr, BACKGROUND, BLACK );
+
+				sprintf(cStr, "%d", buzz);
+				}
+				switch (buzz) {
+					case 1:
+						LCD_DrawBox(184, 120, 48, 48, CYAN);
+						LCD_DrawString_Color (204, 136, cStr, BACKGROUND, CYAN);
+						break;
+					case 2:
+						LCD_DrawBox(184, 120, 48, 48, GREEN);
+						LCD_DrawString_Color (204, 136, cStr, BACKGROUND, GREEN);
+						break;
+					case 3:
+						LCD_DrawBox(184, 120, 48, 48, ORANGE);
+						LCD_DrawString_Color (204, 136, cStr, BACKGROUND, ORANGE);
+						break;
+				}
+
+				/* Title */
+				pStr = "Dynamic Vibration";
+				LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
+
+			}
+
+			ruler = HAL_ADC_GetValue(&hadc2);
+			adaptiveBrightness(trueTone, ruler);
+			if ( ucXPT2046_TouchFlag == 1 ) {
+				actionFlag = backButton();
+				ucXPT2046_TouchFlag = 0;
+				switch (actionFlag) {
+					case 0:
+						LCD_Clear (0, 0, 240, 320, BACKGROUND);
+						return;
+					case 1:		// Toggle
+						if (shock == 0) {
+							LCD_Clear (184, 64, 48, 48, BACKGROUND);
+							LCD_DrawBox(184, 64, 48, 48, GREEN);
+							pStr = "ON";
+							LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
+							shock++;
+						} else {
+							LCD_Clear (184, 64, 48, 48, BACKGROUND);
+							LCD_DrawBox(184, 64, 48, 48, ORANGE);
+							pStr = "OFF";
+							LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
+							shock--;
+						}
+						break;
+					case 2:		// Cascade
+						buzz = (buzz == 3) ? 1 : buzz + 1;
+						sprintf(cStr, "%d", buzz);
+						switch (buzz) {
+							case 1:
+								LCD_DrawBox(184, 120, 48, 48, CYAN);
+								LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, CYAN);
+								break;
+							case 2:
+								LCD_DrawBox(184, 120, 48, 48, GREEN);
+								LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, GREEN);
+								break;
+							case 3:
+								LCD_DrawBox(184, 120, 48, 48, ORANGE);
+								LCD_DrawString_Color ( 204, 136, cStr, BACKGROUND, ORANGE);
+								break;
+						}
+				}
+			}
+
+		}
+	}	
+}
+
+void hiddenConfigPage(void)
+{
+	drawGUIFlag = 1;
+	LCD_Clear (0, 0, 240, 320, BACKGROUND);
+
+	/* Button rendering */
+	LCD_DrawBox(8, 8, 48, 48, BLACK);
+	pStr = "BACK";
+	LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
+
+	/* Breathing light */
+	LCD_DrawBox(184, 64, 48, 48, BLACK);
+	pStr = "MLG";
+	LCD_DrawString_Color ( 16, 72, pStr, BACKGROUND, BLACK );
+
+	pStr = "RGB";
+	LCD_DrawString_Color ( 16, 88, pStr, BACKGROUND, BLACK );
+
+	/* Title */
+	pStr = "Advanced options";
+	LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
+	HAL_Delay(2000);
+	while (1)
+	{
+		ruler = HAL_ADC_GetValue(&hadc2);
+		adaptiveBrightness(trueTone, ruler);
+
+//		colourP = 0;
+//		threeFPSRGB();
+	    if ( ucXPT2046_TouchFlag == 1 ) {
+		    actionFlag = backButton();
+		    ucXPT2046_TouchFlag = 0;
+		    switch (actionFlag) {
+			    case 0:
+			        LCD_Clear (0, 0, 240, 320, BACKGROUND);
+				    return;
+			    case 1:
+				    colourP = 8;
+				    threeFPSRGB();
+				    return;
+		    }
+	    }
+		HAL_Delay(50);
+	}	
+}
+
+void switchFPSRGB() {
+	
+		ruler = HAL_ADC_GetValue(&hadc2);
+		adaptiveBrightness(trueTone, ruler);
+		switch (colourP) {
+			case 0:
+				LCD_Clear (0, 0, 240, 320, RED_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED_C);
+
+				LCD_Clear (0, 0, 240, 320, RED_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED_B);
+
+				LCD_Clear (0, 0, 240, 320, RED_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED_A);
+
+				LCD_Clear (0, 0, 240, 320, RED);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED);
+
+				LCD_Clear (0, 0, 240, 320, RED_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED_A);
+
+				LCD_Clear (0, 0, 240, 320, RED_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED_B);
+
+				LCD_Clear (0, 0, 240, 320, RED_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED_C);
+
+				break;
+			case 1:
+				LCD_Clear (0, 0, 240, 320, ORANGE_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE_C);
+
+				LCD_Clear (0, 0, 240, 320, ORANGE_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE_B);
+
+				LCD_Clear (0, 0, 240, 320, ORANGE_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE_A);
+
+				LCD_Clear (0, 0, 240, 320, ORANGE);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE);
+
+				LCD_Clear (0, 0, 240, 320, ORANGE_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE_A);
+
+				LCD_Clear (0, 0, 240, 320, ORANGE_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE_B);
+
+				LCD_Clear (0, 0, 240, 320, ORANGE_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE_C);
+
+				break;
+			case 2:
+				LCD_Clear (0, 0, 240, 320, YELLOW_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW_C);
+
+				LCD_Clear (0, 0, 240, 320, YELLOW_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW_B);
+
+				LCD_Clear (0, 0, 240, 320, YELLOW_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW_A);
+
+				LCD_Clear (0, 0, 240, 320, YELLOW);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW);
+
+				LCD_Clear (0, 0, 240, 320, YELLOW_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW_A);
+
+				LCD_Clear (0, 0, 240, 320, YELLOW_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW_B);
+
+				LCD_Clear (0, 0, 240, 320, YELLOW_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW_C);
+
+				break;
+			case 3:
+				LCD_Clear (0, 0, 240, 320, GREEN_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN_C);
+
+				LCD_Clear (0, 0, 240, 320, GREEN_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN_B);
+
+				LCD_Clear (0, 0, 240, 320, GREEN_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN_A);
+
+				LCD_Clear (0, 0, 240, 320, GREEN);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN);
+
+				LCD_Clear (0, 0, 240, 320, GREEN_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN_A);
+
+				LCD_Clear (0, 0, 240, 320, GREEN_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN_B);
+
+				LCD_Clear (0, 0, 240, 320, GREEN_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN_C);
+
+				break;
+			case 4:
+				LCD_Clear (0, 0, 240, 320, CYAN_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN_C);
+
+				LCD_Clear (0, 0, 240, 320, CYAN_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN_B);
+
+				LCD_Clear (0, 0, 240, 320, CYAN_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN_A);
+
+				LCD_Clear (0, 0, 240, 320, CYAN);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN);
+
+				LCD_Clear (0, 0, 240, 320, CYAN_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN_A);
+				LCD_Clear (0, 0, 240, 320, CYAN_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN_B);
+
+				LCD_Clear (0, 0, 240, 320, CYAN_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN_C);
+
+				break;
+			case 5:
+				LCD_Clear (0, 0, 240, 320, BLUE_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE_C);
+
+				LCD_Clear (0, 0, 240, 320, BLUE_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE_B);
+
+				LCD_Clear (0, 0, 240, 320, BLUE_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE_A);
+
+				LCD_Clear (0, 0, 240, 320, BLUE);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE);
+
+				LCD_Clear (0, 0, 240, 320, BLUE_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE_A);
+
+				LCD_Clear (0, 0, 240, 320, BLUE_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE_B);
+
+				LCD_Clear (0, 0, 240, 320, BLUE_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE_C);
+
+				break;
+			case 6:
+				LCD_Clear (0, 0, 240, 320, MAGENTA_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA_C);
+
+				LCD_Clear (0, 0, 240, 320, MAGENTA_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA_B);
+
+				LCD_Clear (0, 0, 240, 320, MAGENTA_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA_A);
+
+				LCD_Clear (0, 0, 240, 320, MAGENTA);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA);
+
+				LCD_Clear (0, 0, 240, 320, MAGENTA_A);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA_A);
+
+				LCD_Clear (0, 0, 240, 320, MAGENTA_B);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA_B);
+
+				LCD_Clear (0, 0, 240, 320, MAGENTA_C);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA_C);
+
+				break;
+			case 7:
+				LCD_Clear (0, 0, 240, 320, RED);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, RED);
+
+				LCD_Clear (0, 0, 240, 320, ORANGE);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, ORANGE);
+
+				LCD_Clear (0, 0, 240, 320, YELLOW);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, YELLOW);
+
+				LCD_Clear (0, 0, 240, 320, GREEN);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, GREEN);
+
+				LCD_Clear (0, 0, 240, 320, CYAN);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, CYAN);
+
+				LCD_Clear (0, 0, 240, 320, BLUE);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLUE);
+
+				LCD_Clear (0, 0, 240, 320, MAGENTA);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, MAGENTA);
+
+				break;
+			case 8:
+				LCD_Clear (0, 0, 240, 320, BACKGROUND);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLACK);
+
+				LCD_Clear (0, 0, 240, 320, GREY);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, GREY, BLACK);
+
+				LCD_Clear (0, 0, 240, 320, BLACK);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BLACK, BACKGROUND);
+
+				LCD_Clear (0, 0, 240, 320, GREY);
+				pStr = "Press K1 to exit";
+				LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, GREY, BLACK);
+
+				break;
+		}
+}
+
+void threeFPSRGB(void)
+{
+	drawGUIFlag = 1;
+	while (1) {
+		switchFPSRGB();
+		if (kay == 1) {
+			kay = 0;
+			LCD_Clear(0, 0, 240, 320, BACKGROUND);
+			if (colourP == 7 || colourP == 8) colourP = 6;
+			return;
+		}
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -174,7 +957,6 @@ int main(void)
   MX_I2S2_Init();
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
-	LCD_INIT();
 	FATFS myFATFS;
 	FIL myFILE;
 	UINT numberofbytes;
@@ -197,38 +979,106 @@ int main(void)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
 	}
 
-
-//	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-
-//	getSineVal();
-//	HAL_TIM_Base_Start(&htim1);
-	// HAL_TIM_Base_Start(&htim2);
-//	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
-//	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
-
-	// HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, sine_val, 100, DAC_ALIGN_8B_R);
-
-  // HAL_I2S_Transmit_DMA(&hi2s2, sin_tbl_int, sizeof(sin_tbl_int)/sizeof(sin_tbl_int[0]));  
+  /* USER CODE BEGIN 2 */
+	macXPT2046_CS_DISABLE();
+	LCD_INIT();
+	/* Boot splash */
+	pStr = "Welcome to Stream Deck!";
+	LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLACK );
+	HAL_Delay(1000);
+	LCD_Clear(0, 0, 240, 320, BACKGROUND);
+	HAL_ADCEx_Calibration_Start(&hadc2);
+	HAL_ADC_Start(&hadc2);
+	HAL_ADC_PollForConversion(&hadc2, 500);
+	while( ! XPT2046_Touch_Calibrate () );
+	LCD_Clear(0, 0, 240, 320, BACKGROUND);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1)
+	{
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	if (updateLCDStartPlay) {
-		LCD_DrawString(100, 100, "Press to start playing");
-		updateLCDStartPlay = 0;
-	}
-	if (playPCMFlag) {
-		LCD_Clear (0, 0, 240, 320, BACKGROUND);
-		scanFiles("0:/");
+//	if (updateLCDStartPlay) {
+//		LCD_DrawString(100, 100, "Press to start playing");
+//		updateLCDStartPlay = 0;
+//	}
+	if (!virtualAudioPlayerTask()) {
+
+	     ruler = HAL_ADC_GetValue(&hadc2);
+	   	adaptiveBrightness(trueTone, ruler);
+	   	if (drawGUIFlag) {
+	 	 	/* Main menu */
+	   		drawGUIFlag = 0;
+	   		LCD_Clear(0, 0, 240, 320, BACKGROUND);
+	 	 	pStr = "Stream Deck";			// Title
+	 	 	LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
+
+	 	 	/* Options rendering */
+	 	 	LCD_DrawBox(176, 32, 48, 48, BLACK);
+	 	 	pStr = "Audio FX";
+	 	 	LCD_DrawString_Color (104, 48, pStr, BACKGROUND, BLACK );
+	 	 	// pStr = "Audio";     // Replace me with the icon!
+	 	 	// LCD_DrawString_Color (180, 48, pStr, BACKGROUND, BLACK );
+	 	 	LCD_DrawBox(184, 48, 8, 16, BLACK);
+	 	 	LCD_DrawEllipse (194, 56, 12, 6, BLACK);
+	 	 	LCD_DrawEllipse (202, 56, 16, 6, BLACK);
+	 	 	LCD_DrawEllipse (210, 56, 20, 6, BLACK);
+
+	 	 	LCD_DrawBox(176, 96, 48, 48, BLACK);
+	 	 	pStr = "Display";
+	 	 	LCD_DrawString_Color (112, 112, pStr, BACKGROUND, BLACK );
+	 	 	// pStr = "Disp";     // Replace me with the icon!
+	 	 	// LCD_DrawString_Color (180, 112, pStr, BACKGROUND, BLACK );
+	 	 	/* Icon */
+	 	 	// Vertical deco
+	 	 	LCD_DrawLine (200, 100, 200, 104, BLACK );
+	 	 	LCD_DrawLine (200, 136, 200, 140, BLACK );
+	 	 	// Horizontal deco
+	 	 	LCD_DrawLine (216, 120, 220, 120, BLACK );
+	 	 	LCD_DrawLine (180, 120, 184, 120, BLACK );
+	 	 	// Slanted deco
+	 	 	LCD_DrawLine (182, 102, 186, 106, BLACK );
+	 	 	LCD_DrawLine (182, 138, 186, 134, BLACK );
+	 	 	LCD_DrawLine (218, 102, 214, 106, BLACK );
+	 	 	LCD_DrawLine (218, 138, 214, 134, BLACK );
+	 	 	LCD_DrawEllipse (200, 120, 12, 12, BLACK);
+
+	 	 	LCD_DrawBox(176, 160, 48, 48, BLACK);
+	 	 	pStr = "Dynamic Vibration";
+	 	 	LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
+	 	 	/* Icon */
+	 	 	LCD_DrawBox(182, 166, 36, 36, BLACK);
+	 	 	LCD_DrawEllipse (200, 184, 12, 12, BLACK);
+
+	 	 	LCD_DrawBox(176, 224, 48, 48, BLACK);
+	 	 	pStr = "Options";
+	 	 	/* Icon */
+	 	 	LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
+	 	 	LCD_DrawEllipse (200, 248, 12, 12, BLACK);
+
+	   	}
+
+
+ 	 	// Main dish :)
+		 //  hiddenConfigPage();
+ 	 	if ( ucXPT2046_TouchFlag == 1 ) {
+ 	 	    actionFlag = menuButton();
+ 	 	    ucXPT2046_TouchFlag = 0;
+ 	 	    switch (actionFlag) {
+ 	 	    	case 0: audiofxConfigPage(); drawGUIFlag = 1; break;
+ 	 	    	case 1: displayConfigPage(); drawGUIFlag = 1; break;
+ 	 	    	case 2: dvConfigPage(); drawGUIFlag = 1; break;
+ 	 	    	case 3: hiddenConfigPage(); drawGUIFlag = 1; break;
+ 	 	    }
+ 	 	}
 	}
 
-  }
+  // }
+     }
   /* USER CODE END 3 */
 }
 
@@ -316,7 +1166,7 @@ static void MX_ADC2_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_4;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_55CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
   {
     Error_Handler();

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "lcd.h"
+#include "lcdtp.h"
 #include "main.h"
 
 FRESULT scanFiles(char* path);

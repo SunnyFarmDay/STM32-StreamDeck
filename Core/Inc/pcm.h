@@ -13,6 +13,8 @@ extern unsigned int pcmBr;
 extern unsigned int pcmDataToRead;
 extern uint16_t pcmBufferIndex;
 extern uint8_t playingFlag;
+extern uint32_t targetAudioFrequency;
+extern uint16_t fxMode;
 
 void playPCMFile(char *filename);
 

@@ -21,6 +21,9 @@ uint8_t startFlag = 0;
 uint8_t playingFlag = 0;
 uint8_t fillBufFlag = 0;
 
+uint32_t targetAudioFrequency = 16000;
+uint16_t fxMode = 11;
+
 float volume = 0.2;
 
 #define PI 3.14159265358979323846
@@ -101,6 +104,7 @@ void robotizeAudioData(short* audioData, int size) {
 
 uint8_t playPCMFileInit(char *filename)
 {
+    changeSpeed();
 
     res = f_open(&file, filename, FA_READ);
     if (res != FR_OK)
@@ -113,6 +117,7 @@ uint8_t playPCMFileInit(char *filename)
         pcmBuffer[i] = pcmBuffer[i] * volume;
     }
     // distorted(pcmBuffer, DECODE_BUFFERSIZE);
+    addFx(pcmBuffer, DECODE_BUFFERSIZE);
 
     if (res != FR_OK)
     {
@@ -142,6 +147,59 @@ uint16_t getMaxVolume(uint16_t* audioData, int size) {
     return max;
 }
 
+void changeSpeed() {
+    switch (fxMode)
+    {
+    case 11:
+        targetAudioFrequency = 16000;
+        break;
+    case 12:
+        targetAudioFrequency = 12000;
+        break;
+    case 13:
+        targetAudioFrequency = 32000;
+        break;
+    case 21:
+        targetAudioFrequency = 48000;
+        break;
+    case 22:
+        targetAudioFrequency = 12000;
+        break;
+    case 23:
+        targetAudioFrequency = 24000;
+        break;
+    
+    default:
+        break;
+    }
+    changeI2SFreq(targetAudioFrequency);
+}
+void addFx(uint16_t* audioData, int size) {
+    switch (fxMode) {
+        case 11:
+            break;
+        case 12:
+            break;
+        case 13:
+            break;
+        case 21:
+            distorted(audioData, size);
+            // highAndLow(audioData, size);
+            break;
+        case 22:
+            distorted(audioData, size);
+            // highAndLow(audioData, size);
+            break;
+        case 23:
+            // distorted(audioData, size);
+            highAndLow(audioData, size);
+            break;
+        default:
+            targetAudioFrequency = 16000;
+            break;
+    }
+}
+
 void playPCMFile(char *filename) {
     initialize_sine_table();
     playPCMFileInit(filename);
@@ -150,6 +208,9 @@ void playPCMFile(char *filename) {
     	if (nextSongFlag == 1) {
             break;
     	}
+        if (!playPCMFlag) {
+            break;
+        }
         if (fillBufFlag)
         {
             res = f_read(&file, inBuffer, DECODE_BUFFERSIZE, &pcmBr);
@@ -157,7 +218,7 @@ void playPCMFile(char *filename) {
             {
                 inBuffer[i] = inBuffer[i] * volume;
             }
-            // distorted(inBuffer, DECODE_BUFFERSIZE / 2);
+            addFx(inBuffer, DECODE_BUFFERSIZE / 2);
             if (res != FR_OK)
             {
                 nextSongFlag = 1;
@@ -181,6 +242,7 @@ void playPCMFileEnd()
 {
     playingFlag = 0;
     f_close(&file);
+    HAL_I2S_DMAStop(&hi2s2);
 }
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
