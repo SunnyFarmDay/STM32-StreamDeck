@@ -498,6 +498,46 @@ uint8_t XPT2046_Get_TouchedPoint ( strType_XPT2046_Coordinate * pDisplayCoordina
 	
 } 
 
+int configButton(void)			// Button handler for config menu
+{
+		strType_XPT2046_Coordinate strDisplayCoordinate;
+	
+	if ( XPT2046_Get_TouchedPoint ( & strDisplayCoordinate, & strXPT2046_TouchPara ) )
+	{
+		/* Back button handler */
+		if ( ( strDisplayCoordinate .y > 13 ) && ( strDisplayCoordinate .y < 51 ) )
+		{
+			if ( ( strDisplayCoordinate .x > 13 ) && ( strDisplayCoordinate .x < 51 ) )
+			{
+				return 0;
+			}					
+		}
+
+		else if ( ( strDisplayCoordinate .x > 181 ) && ( strDisplayCoordinate .x < 219 ) )
+		{
+			if ( ( strDisplayCoordinate .y > 69 ) && ( strDisplayCoordinate .y < 107 ) )
+			{	// Button 1
+				return 1;
+			}	
+
+			else if ( ( strDisplayCoordinate .y > 133 ) && ( strDisplayCoordinate .y < 171 ) )
+			{	// Button 2
+				return 2;
+			}
+			
+			else if ( ( strDisplayCoordinate .y > 197 ) && ( strDisplayCoordinate .y < 235 ) )
+			{	// Button 3
+				return 3;
+			}
+			
+			else if ( ( strDisplayCoordinate .y > 261 ) && ( strDisplayCoordinate .y < 299 ) )
+			{	// Button 4
+				return 4;
+			}		
+		}
+	}
+	return -1;
+}
 
 int menuButton(void)			// Button handler for main menu
 {
@@ -508,22 +548,22 @@ int menuButton(void)			// Button handler for main menu
 		if ( ( strDisplayCoordinate .x > 181 ) && ( strDisplayCoordinate .x < 219 ) )
 		{
 			if ( ( strDisplayCoordinate .y > 37 ) && ( strDisplayCoordinate .y < 75 ) )
-			{	// Audio FX
+			{	// Button 1
 				return 0;
 			}	
 
 			else if ( ( strDisplayCoordinate .y > 101 ) && ( strDisplayCoordinate .y < 139 ) )
-			{	// Display settings
+			{	// Button 2
 				return 1;
 			}
 			
 			else if ( ( strDisplayCoordinate .y > 165 ) && ( strDisplayCoordinate .y < 203 ) )
-			{	// Dynamic vibration
+			{	// Button 3
 				return 2;
 			}
 			
 			else if ( ( strDisplayCoordinate .y > 229 ) && ( strDisplayCoordinate .y < 267 ) )
-			{	// Advanced options
+			{	// Button 4
 				return 3;
 			}		
 		}
