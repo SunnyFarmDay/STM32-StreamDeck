@@ -221,7 +221,7 @@ void LCD_REG_Config ( void )
 
 	// Write
 	LCD_Write_Cmd ( 0x53 );		// Enable brightness control
-	LCD_Write_Data ( 0x2C );
+	LCD_Write_Data ( 0x24 );
 //	LCD_Write_Cmd ( 0x51 );		// Setting default brightness
 //	LCD_Write_Data ( 0xFF );
 	DEBUG_DELAY ();
