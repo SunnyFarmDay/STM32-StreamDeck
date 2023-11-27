@@ -68,6 +68,14 @@ SRAM_HandleTypeDef hsram1;
 
  	}
  }
+ uint8_t updateLCDStartPlay = 1;
+ uint8_t playPCMFlag = 0;
+ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	if (GPIO_Pin == GPIO_PIN_13) {
+		updateLCDStartPlay = 1;
+		playPCMFlag = 1;
+ 	}
+}
 
 // void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //     if (htim->Instance == TIM1) {
@@ -218,6 +226,7 @@ int main(void)
 	if (playPCMFlag) {
 		LCD_Clear (0, 0, 240, 320, BACKGROUND);
 		scanFiles("0:/");
+	}
 
   }
   /* USER CODE END 3 */
@@ -560,6 +569,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
