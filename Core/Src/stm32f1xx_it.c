@@ -228,7 +228,7 @@ void EXTI4_IRQHandler(void)
   if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_4) != RESET)
   {
         ucXPT2046_TouchFlag = 1;
-		
+
     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_4);
     HAL_GPIO_EXTI_Callback(GPIO_PIN_4);
   }
