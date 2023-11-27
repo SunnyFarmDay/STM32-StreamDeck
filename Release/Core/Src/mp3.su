@@ -1,0 +1,2 @@
+../Core/Src/mp3.c:93:9:FillMp3Buf	72	static
+../Core/Src/mp3.c:173:9:PlayMp3File	48	static

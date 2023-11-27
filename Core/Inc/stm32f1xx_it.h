@@ -4,7 +4,7 @@
   * @file    stm32f1xx_it.h
   * @brief   This file contains the headers of the interrupt handlers.
   ******************************************************************************
-  * @attention
+  * @attentio
   *
   * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
@@ -27,6 +27,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "pcm.h"
+#include "lcdtp.h"
+#include "main.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +60,8 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 void EXTI0_IRQHandler(void);
 void EXTI4_IRQHandler(void);
+void DMA1_Channel5_IRQHandler(void);
+void TIM1_UP_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 void SDIO_IRQHandler(void);
 /* USER CODE BEGIN EFP */

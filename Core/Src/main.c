@@ -22,10 +22,14 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "files.h"
+#include "math.h"
+#include "pcm.h"
 #include <stdio.h>
 #include <string.h>
 #include "lcdtp.h"
 #include "xpt2046.h"
+#include "pcm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,16 +51,90 @@
 /* Private variables ---------------------------------------------------------*/
  ADC_HandleTypeDef hadc2;
 
+I2S_HandleTypeDef hi2s2;
+DMA_HandleTypeDef hdma_spi2_tx;
+
 SD_HandleTypeDef hsd;
+
+TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
 
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
+ float value = 0.2;
+ uint32_t var;
+ uint32_t sine_val[100];
+
+ #define PI 3.1415926
+
+ void getSineVal() {
+ 	for (int i = 0; i < 100; i++) {
+ 		sine_val[i] = (((sin(i*2*PI/100)+1)*(255/2))*0.5);
+
+ 	}
+ }
+ uint8_t updateLCDStartPlay = 1;
+ uint8_t playPCMFlag = 0;
+ uint8_t drawGUIFlag = 1;
+ uint8_t drawButtonsFlag = 1;
+ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin == GPIO_PIN_0) {
+    kay = 1;
+  }
+	if (GPIO_Pin == GPIO_PIN_13) {
+		playPCMFlag = playPCMFlag == 0 ? 1 : 0;
+		if (!playPCMFlag) {
+			drawGUIFlag = 1;
+		}
+//		updateLCDStartPlay = 1;
+ 	}
+}
+
+// void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+//     if (htim->Instance == TIM1) {
+//         if (pcmDataToRead > 0) {
+//             HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_8B_R, pcmBuffer[pcmBufferIndex]);
+//             HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_8B_R, pcmBuffer[pcmBufferIndex+1]);
+//             pcmBufferIndex += 2;
+//             pcmDataToRead--;
+//         }
+//     }
+// }
+
+const uint16_t triangle_wave[]  = {
+0x400,0x800,0xc00,0x1000,0x1400,0x1800,0x1c00,0x2000,
+0x2400,0x2800,0x2c00,0x3000,0x3400,0x3800,0x3c00,0x4000,
+0x4400,0x4800,0x4c00,0x5000,0x5400,0x5800,0x5c00,0x6000,
+0x6400,0x6800,0x6c00,0x7000,0x7400,0x7800,0x7c00,0x8000,
+0x83ff,0x87ff,0x8bff,0x8fff,0x93ff,0x97ff,0x9bff,0x9fff,
+0xa3ff,0xa7ff,0xabff,0xafff,0xb3ff,0xb7ff,0xbbff,0xbfff,
+0xc3ff,0xc7ff,0xcbff,0xcfff,0xd3ff,0xd7ff,0xdbff,0xdfff,
+0xe3ff,0xe7ff,0xebff,0xefff,0xf3ff,0xf7ff,0xfbff,0xffff,
+0xfbff,0xf7ff,0xf3ff,0xefff,0xebff,0xe7ff,0xe3ff,0xdfff,
+0xdbff,0xd7ff,0xd3ff,0xcfff,0xcbff,0xc7ff,0xc3ff,0xbfff,
+0xbbff,0xb7ff,0xb3ff,0xafff,0xabff,0xa7ff,0xa3ff,0x9fff,
+0x9bff,0x97ff,0x93ff,0x8fff,0x8bff,0x87ff,0x83ff,0x8000,
+0x7c00,0x7800,0x7400,0x7000,0x6c00,0x6800,0x6400,0x6000,
+0x5c00,0x5800,0x5400,0x5000,0x4c00,0x4800,0x4400,0x4000,
+0x3c00,0x3800,0x3400,0x3000,0x2c00,0x2800,0x2400,0x2000,
+0x1c00,0x1800,0x1400,0x1000,0xc00,0x800,0x400,0x0,
+};
+const uint16_t sin_tbl_int[91] = {	    0,   572,  1144,  1715,  2286,  2856,  3425,  3993,  4560,  5126,
+									 5690,  6252,  6813,  7371,  7927,  8481,  9032,  9580, 10126, 10668,
+									11207, 11743, 12275, 12803, 13328, 13848, 14365, 14876, 15384, 15886,
+									16384, 16877, 17364, 17847, 18324, 18795, 19261, 19720, 20174, 20622,
+									21063, 21498, 21926, 22348, 22763, 23170, 23571, 23965, 24351, 24730,
+									25102, 25466, 25822, 26170, 26510, 26842, 27166, 27482, 27789, 28088,
+									28378, 28660, 28932, 29197, 29452, 29698, 29935, 30163, 30382, 30592,
+									30792, 30983, 31164, 31336, 31499, 31651, 31795, 31928, 32052, 32166,
+									32270, 32365, 32449, 32524, 32588, 32643, 32688, 32723, 32748, 32763,
+									32768 };
 /* Strings */
 char * pStr = 0, cStr [10];
 
 /* Flags */
-uint16_t actionFlag = 0, clearFlag = 0;
+uint16_t actionFlag = 0, drawGUIFlag = 0, drawButtonsFlag = 0;
 uint16_t inputSrc = 0 /* 0 = SD | 1 = 3.5mm */, fxMode = 11;		// See xpt2046.c \ audiofxConfig()
 uint16_t kay = 0 /* K1 flag */, kerry = 0 /* K2 flag */, trueTone = 0 /* LDR trigger */, colourP = 0;	// Display colour preset
 uint16_t shock = 0 /* Dynamic vibration trigger */, buzz = 1;	// 1 = Mildest | 3 = Strongest
@@ -70,9 +148,21 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_SDIO_SD_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_DMA_Init(void);
+static void MX_I2S2_Init(void);
 static void MX_ADC2_Init(void);
 /* USER CODE BEGIN PFP */
-
+uint8_t virtualAudioPlayerTask() {
+	if (playPCMFlag) {
+		// LCD_Clear (0, 0, 240, 320, BACKGROUND);
+		scanFiles("0:/");
+		return 1;
+	} else {
+		return 0;
+	}
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -136,13 +226,39 @@ int main(void)
 
   /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_FSMC_Init();
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
+  MX_DMA_Init();
+  MX_I2S2_Init();
   MX_ADC2_Init();
+  
   /* USER CODE BEGIN 2 */
+	FATFS myFATFS;
+	FIL myFILE;
+	UINT numberofbytes;
+	char myPath[] = "TEST.TXT\0";
+	char myData[] = "Hello World\0";
+	FRESULT res;
+
+	res = f_mount(&myFATFS,SDPath,1);
+	if (res == FR_OK)
+	{
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0,GPIO_PIN_RESET);
+		f_open(&myFILE, myPath, FA_WRITE |FA_CREATE_ALWAYS);
+		f_write(&myFILE, myData, sizeof(myData), &numberofbytes);
+		f_close(&myFILE);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1,GPIO_PIN_RESET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+	}
+  
   macXPT2046_CS_DISABLE();
   LCD_INIT();
   /* Boot splash */
@@ -152,7 +268,7 @@ int main(void)
   LCD_Clear(0, 0, 240, 320, BACKGROUND);
   HAL_ADCEx_Calibration_Start(&hadc2);
   HAL_ADC_Start(&hadc2);
-  HAL_ADC_PollForConversion(&hadc2, 500);
+  HAL_ADC_PollForConversion(&hadc2, 100);
   while( ! XPT2046_Touch_Calibrate () );
   LCD_Clear(0, 0, 240, 320, BACKGROUND);
 
@@ -167,7 +283,10 @@ int main(void)
         /* USER CODE BEGIN 3 */
 		goto mainMenu;
 		
-		label audiofxConfigPageBegin:
+		if (!virtualAudioPlayerTask()) {
+			// drawGUIFlag is only used in configMenu and mainMenu labels that use just one label to render everything
+			// Labels ending with "Begin" are only rendered once, so drawButtonsFlag isn't necessary
+    	label audiofxConfigPageBegin:
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -201,86 +320,93 @@ int main(void)
 			LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
 			
 			label audiofxConfigPageRender:
+			/**
+			 * Adding the justification here for subsequent code snippets:
+			 * For the adaptive brightness feature to work properly,
+			 * HAL_ADC_GetValue() must be called every 100ms
+			 */
 				ruler = HAL_ADC_GetValue(&hadc2);
 				adaptiveBrightness(trueTone, ruler);
 				/* Voice effect selection */
-				
-				if (fxMode == 11) {
-					LCD_DrawBox(32, 142, 48, 48, GREEN);
-					pStr = "No";
-					LCD_DrawString_Color (34, 150, pStr, BACKGROUND, GREEN);
-					pStr = "effect";
-					LCD_DrawString_Color (34, 166, pStr, BACKGROUND, GREEN);
-				}
-				else {
-					LCD_DrawBox(32, 142, 48, 48, BLACK);
-					pStr = "No";
-					LCD_DrawString_Color (34, 150, pStr, BACKGROUND, BLACK);
-					pStr = "effect";
-					LCD_DrawString_Color (34, 166, pStr, BACKGROUND, BLACK);
-				}
+				if (drawButtonsFlag == 0) {
+					if (fxMode == 11) {
+						LCD_DrawBox(32, 142, 48, 48, GREEN);
+						pStr = "No";
+						LCD_DrawString_Color (34, 150, pStr, BACKGROUND, GREEN);
+						pStr = "effect";
+						LCD_DrawString_Color (34, 166, pStr, BACKGROUND, GREEN);
+					}
+					else {
+						LCD_DrawBox(32, 142, 48, 48, BLACK);
+						pStr = "No";
+						LCD_DrawString_Color (34, 150, pStr, BACKGROUND, BLACK);
+						pStr = "effect";
+						LCD_DrawString_Color (34, 166, pStr, BACKGROUND, BLACK);
+					}
 
-				if (fxMode == 12) {
-					LCD_DrawBox(92, 142, 48, 48, GREEN);
-					pStr = "Deep";
-					LCD_DrawString_Color (94, 150, pStr, BACKGROUND, GREEN);
-					pStr = "pitch";
-					LCD_DrawString_Color (94, 166, pStr, BACKGROUND, GREEN);
-				}
-				else {
-					LCD_DrawBox(92, 142, 48, 48, BLACK);
-					pStr = "Deep";
-					LCD_DrawString_Color (94, 150, pStr, BACKGROUND, BLACK);
-					pStr = "pitch";
-					LCD_DrawString_Color (94, 166, pStr, BACKGROUND, BLACK);
-				}
+					if (fxMode == 12) {
+						LCD_DrawBox(92, 142, 48, 48, GREEN);
+						pStr = "Deep";
+						LCD_DrawString_Color (94, 150, pStr, BACKGROUND, GREEN);
+						pStr = "pitch";
+						LCD_DrawString_Color (94, 166, pStr, BACKGROUND, GREEN);
+					}
+					else {
+						LCD_DrawBox(92, 142, 48, 48, BLACK);
+						pStr = "Deep";
+						LCD_DrawString_Color (94, 150, pStr, BACKGROUND, BLACK);
+						pStr = "pitch";
+						LCD_DrawString_Color (94, 166, pStr, BACKGROUND, BLACK);
+					}
 
-				if (fxMode == 13) {
-					LCD_DrawBox(152, 142, 48, 48, GREEN);
-					pStr = "High";
-					LCD_DrawString_Color (154, 150, pStr, BACKGROUND, GREEN);
-					pStr = "pitch";
-					LCD_DrawString_Color (154, 166, pStr, BACKGROUND, GREEN);
-				}
-				else {
-					LCD_DrawBox(152, 142, 48, 48, BLACK);
-					pStr = "High";
-					LCD_DrawString_Color (154, 150, pStr, BACKGROUND, BLACK);
-					pStr = "pitch";
-					LCD_DrawString_Color (154, 166, pStr, BACKGROUND, BLACK);
-				}
+					if (fxMode == 13) {
+						LCD_DrawBox(152, 142, 48, 48, GREEN);
+						pStr = "High";
+						LCD_DrawString_Color (154, 150, pStr, BACKGROUND, GREEN);
+						pStr = "pitch";
+						LCD_DrawString_Color (154, 166, pStr, BACKGROUND, GREEN);
+					}
+					else {
+						LCD_DrawBox(152, 142, 48, 48, BLACK);
+						pStr = "High";
+						LCD_DrawString_Color (154, 150, pStr, BACKGROUND, BLACK);
+						pStr = "pitch";
+						LCD_DrawString_Color (154, 166, pStr, BACKGROUND, BLACK);
+					}
 
-				if (fxMode == 21) {
-					LCD_DrawBox(32, 198, 48, 48, GREEN);
-					pStr = "Robot";
-					LCD_DrawString_Color (34, 214, pStr, BACKGROUND, GREEN);
-				}
-				else {
-					LCD_DrawBox(32, 198, 48, 48, BLACK);
-					pStr = "Robot";
-					LCD_DrawString_Color (34, 214, pStr, BACKGROUND, BLACK);
-				}
+					if (fxMode == 21) {
+						LCD_DrawBox(32, 198, 48, 48, GREEN);
+						pStr = "Robot";
+						LCD_DrawString_Color (34, 214, pStr, BACKGROUND, GREEN);
+					}
+					else {
+						LCD_DrawBox(32, 198, 48, 48, BLACK);
+						pStr = "Robot";
+						LCD_DrawString_Color (34, 214, pStr, BACKGROUND, BLACK);
+					}
 
-				if (fxMode == 22) {
-					LCD_DrawBox(92, 198, 48, 48, GREEN);
-					pStr = "Dino";
-					LCD_DrawString_Color (94, 214, pStr, BACKGROUND, GREEN);
-				}
-				else {
-					LCD_DrawBox(92, 198, 48, 48, BLACK);
-					pStr = "Dino";
-					LCD_DrawString_Color (94, 214, pStr, BACKGROUND, BLACK);
-				}
+					if (fxMode == 22) {
+						LCD_DrawBox(92, 198, 48, 48, GREEN);
+						pStr = "Dino";
+						LCD_DrawString_Color (94, 214, pStr, BACKGROUND, GREEN);
+					}
+					else {
+						LCD_DrawBox(92, 198, 48, 48, BLACK);
+						pStr = "Dino";
+						LCD_DrawString_Color (94, 214, pStr, BACKGROUND, BLACK);
+					}
 
-				if (fxMode == 23) {
-					LCD_DrawBox(152, 198, 48, 48, GREEN);
-					pStr = "R2-D2";
-					LCD_DrawString_Color (154, 214, pStr, BACKGROUND, GREEN);
-				}
-				else {
-					LCD_DrawBox(152, 198, 48, 48, BLACK);
-					pStr = "R2-D2";
-					LCD_DrawString_Color (154, 214, pStr, BACKGROUND, BLACK);
+					if (fxMode == 23) {
+						LCD_DrawBox(152, 198, 48, 48, GREEN);
+						pStr = "R2-D2";
+						LCD_DrawString_Color (154, 214, pStr, BACKGROUND, GREEN);
+					}
+					else {
+						LCD_DrawBox(152, 198, 48, 48, BLACK);
+						pStr = "R2-D2";
+						LCD_DrawString_Color (154, 214, pStr, BACKGROUND, BLACK);
+					}
+					drawButtonsFlag++;
 				}
 
 				if ( ucXPT2046_TouchFlag == 1 ) {
@@ -306,12 +432,12 @@ int main(void)
 							}
 							break;
 						// Toggle FX
-						case 11: fxMode = 11; break;
-						case 12: fxMode = 12; break;
-						case 13: fxMode = 13; break;
-						case 21: fxMode = 21; break;
-						case 22: fxMode = 22; break;
-						case 23: fxMode = 23; break;
+						case 11: drawButtonsFlag = 0; fxMode = 11; break;
+						case 12: drawButtonsFlag = 0; fxMode = 12; break;
+						case 13: drawButtonsFlag = 0; fxMode = 13; break;
+						case 21: drawButtonsFlag = 0; fxMode = 21; break;
+						case 22: drawButtonsFlag = 0; fxMode = 22; break;
+						case 23: drawButtonsFlag = 0; fxMode = 23; break;
 					}
 				}
 				HAL_Delay(100);
@@ -394,19 +520,20 @@ int main(void)
 
 			label displayConfigPageRender:
 				// Showing LDR value on screen
-				sprintf(chovy, "%x",  ruler);
-				LCD_Clear(128, 88, 48, 16, BACKGROUND);
-				LCD_DrawString(128, 88, chovy);
+				// sprintf(chovy, "%x",  ruler);
+				// LCD_Clear(128, 88, 48, 16, BACKGROUND);
+				// LCD_DrawString(128, 88, chovy);
 
 				ruler = HAL_ADC_GetValue(&hadc2);
 				adaptiveBrightness(trueTone, ruler);
 
+				// drawButtonsFlag isn't needed as these buttons are only rendered once the touchscreen senses input
 				if ( ucXPT2046_TouchFlag == 1 ) {
 					actionFlag = backButton();
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							clearFlag = 0;
+							drawGUIFlag = 0;
 							goto configMenu;
 						case 1:
 							if (trueTone == 0) {
@@ -526,7 +653,7 @@ int main(void)
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							clearFlag = 0;
+							drawGUIFlag = 0;
 							goto configMenu;
 						case 1:		// Toggle
 							if (shock == 0) {
@@ -870,7 +997,7 @@ int main(void)
 			}
 			if (kay == 1) {
 				kay = 0;
-				clearFlag = 0;
+				drawGUIFlag = 0;
 				if (colourP == 7 || colourP == 8) colourP = 0;
 				goto mainMenu;
 			}
@@ -882,65 +1009,64 @@ int main(void)
 			adaptiveBrightness(trueTone, ruler);
 
 			/* Main menu */
-			if (clearFlag == 0) {
+			if (drawGUIFlag == 0) {
 				LCD_Clear(0, 0, 240, 320, BACKGROUND);
-				clearFlag++;
+				drawGUIFlag++;
+
+				LCD_DrawBox(8, 8, 48, 48, BLACK);
+				pStr = "BACK";
+				LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
+
+				pStr = "Config";			// Title
+				LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
+
+				/* Options rendering */
+				LCD_DrawBox(176, 64, 48, 48, BLACK);
+				pStr = "Audio FX";
+				LCD_DrawString_Color (104, 80, pStr, BACKGROUND, BLACK );
+				/* Icon */
+				LCD_DrawBox(184, 80, 8, 16, BLACK);
+				LCD_DrawEllipse (194, 88, 12, 6, BLACK);
+				LCD_DrawEllipse (202, 88, 16, 6, BLACK);
+				LCD_DrawEllipse (210, 88, 20, 6, BLACK);
+
+				LCD_DrawBox(176, 128, 48, 48, BLACK);
+				pStr = "Display";
+				LCD_DrawString_Color (112, 144, pStr, BACKGROUND, BLACK );
+				/* Icon */
+				// Vertical deco
+				LCD_DrawLine (200, 132, 200, 136, BLACK );
+				LCD_DrawLine (200, 168, 200, 172, BLACK );
+				// Horizontal deco
+				LCD_DrawLine (216, 152, 220, 152, BLACK );
+				LCD_DrawLine (180, 152, 184, 152, BLACK );
+				// Slanted deco
+				LCD_DrawLine (182, 154, 186, 158, BLACK );
+				LCD_DrawLine (182, 170, 186, 166, BLACK );
+				LCD_DrawLine (218, 154, 214, 158, BLACK );
+				LCD_DrawLine (218, 170, 214, 166, BLACK );
+				LCD_DrawEllipse (200, 152, 12, 12, BLACK);
+
+				LCD_DrawBox(176, 192, 48, 48, BLACK);
+				pStr = "Dynamic Vibration";
+				LCD_DrawString_Color (32, 208, pStr, BACKGROUND, BLACK );
+				/* Icon */
+				LCD_DrawBox(182, 198, 36, 36, BLACK);
+				LCD_DrawEllipse (200, 216, 12, 12, BLACK);
+
+				LCD_DrawBox(176, 256, 48, 48, BLACK);
+				pStr = "Options";
+				/* Icon */
+				LCD_DrawString_Color (112, 272, pStr, BACKGROUND, BLACK );
+				LCD_DrawEllipse (200, 280, 12, 12, BLACK);
 			}
-
-			LCD_DrawBox(8, 8, 48, 48, BLACK);
-			pStr = "BACK";
-			LCD_DrawString_Color ( 16, 24, pStr, BACKGROUND, BLACK );
-
-			pStr = "Config";			// Title
-			LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
-
-			/* Options rendering */
-			LCD_DrawBox(176, 64, 48, 48, BLACK);
-			pStr = "Audio FX";
-			LCD_DrawString_Color (104, 80, pStr, BACKGROUND, BLACK );
-			// pStr = "Audio";     // Replace me with the icon!
-			// LCD_DrawString_Color (180, 80, pStr, BACKGROUND, BLACK );
-			LCD_DrawBox(184, 80, 8, 16, BLACK);
-			LCD_DrawEllipse (194, 88, 12, 6, BLACK);
-			LCD_DrawEllipse (202, 88, 16, 6, BLACK);
-			LCD_DrawEllipse (210, 88, 20, 6, BLACK);
-
-			LCD_DrawBox(176, 128, 48, 48, BLACK);
-			pStr = "Display";
-			LCD_DrawString_Color (112, 144, pStr, BACKGROUND, BLACK );
-			/* Icon */
-			// Vertical deco
-			LCD_DrawLine (200, 132, 200, 136, BLACK );
-			LCD_DrawLine (200, 168, 200, 172, BLACK );
-			// Horizontal deco
-			LCD_DrawLine (216, 152, 220, 152, BLACK );
-			LCD_DrawLine (180, 152, 184, 152, BLACK );
-			// Slanted deco
-			LCD_DrawLine (182, 154, 186, 158, BLACK );
-			LCD_DrawLine (182, 170, 186, 166, BLACK );
-			LCD_DrawLine (218, 154, 214, 158, BLACK );
-			LCD_DrawLine (218, 170, 214, 166, BLACK );
-			LCD_DrawEllipse (200, 152, 12, 12, BLACK);
-
-			LCD_DrawBox(176, 192, 48, 48, BLACK);
-			pStr = "Dynamic Vibration";
-			LCD_DrawString_Color (32, 208, pStr, BACKGROUND, BLACK );
-			/* Icon */
-			LCD_DrawBox(182, 198, 36, 36, BLACK);
-			LCD_DrawEllipse (200, 216, 12, 12, BLACK);
-
-			LCD_DrawBox(176, 256, 48, 48, BLACK);
-			pStr = "Options";
-			/* Icon */
-			LCD_DrawString_Color (112, 272, pStr, BACKGROUND, BLACK );
-			LCD_DrawEllipse (200, 280, 12, 12, BLACK);
 
 			// Main dish :)
 			if ( ucXPT2046_TouchFlag == 1 ) {
 				actionFlag = configButton();
 				ucXPT2046_TouchFlag = 0;
 				switch (actionFlag) {
-					case 0: clearFlag = 0; goto mainMenu;
+					case 0: drawGUIFlag = 0; goto mainMenu;
 					case 1: goto audiofxConfigPageBegin;
 					case 2: goto displayConfigPageBegin;
 					case 3: goto dvConfigPageBegin;
@@ -955,59 +1081,64 @@ int main(void)
 			ruler = HAL_ADC_GetValue(&hadc2);
 			adaptiveBrightness(trueTone, ruler);
 
+      //	if (updateLCDStartPlay) {
+      //		LCD_DrawString(100, 100, "Press to start playing");
+      //		updateLCDStartPlay = 0;
+      //	}
 			/* Main menu */
-			if (clearFlag == 0) {
+			if (drawGUIFlag == 0) {
 				LCD_Clear(0, 0, 240, 320, BACKGROUND);
-				clearFlag++;
+				drawGUIFlag++;
+
+				pStr = "Stream Deck";			// Title
+				LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
+
+				/* Options rendering */
+				LCD_DrawBox(176, 32, 48, 48, BLACK);
+				pStr = "K1: Return";
+				LCD_DrawString_Color (32, 40, pStr, BACKGROUND, BLACK );
+				pStr = "K2: Play/Pause";
+				LCD_DrawString_Color (32, 56, pStr, BACKGROUND, BLACK );
+				/* Icon */
+				LCD_DrawBox(184, 48, 8, 16, BLACK);
+				LCD_DrawEllipse (194, 56, 12, 6, BLACK);
+				LCD_DrawEllipse (202, 56, 16, 6, BLACK);
+				LCD_DrawEllipse (210, 56, 20, 6, BLACK);
+
+				LCD_DrawBox(176, 96, 48, 48, BLACK);
+				pStr = "Loaded filename:";
+				LCD_DrawString_Color (32, 104, pStr, BACKGROUND, BLACK );
+				// Loaded filename
+				pStr = (myPath[0] == 0) ? "No file loaded" : myPath;
+				LCD_DrawString_Color (32, 120, pStr, BACKGROUND, BLACK );		
+				/* Icon */
+				LCD_DrawEllipse (200, 120, 12, 12, BLACK);
+
+				LCD_DrawBox(176, 160, 48, 48, BLACK);
+				pStr = "Play/Pause";
+				LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
+				/* Icon */
+				LCD_DrawLine(196, 172, 196, 196, BLACK);
+				LCD_DrawLine(196, 172, 216, 184, BLACK);
+				LCD_DrawLine(196, 196, 216, 184, BLACK);
+
+				LCD_DrawBox(176, 224, 48, 48, BLACK);
+				pStr = "Config";
+				LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
+				/* Icon */
+				// Vertical deco
+				LCD_DrawLine (200, 228, 200, 232, BLACK );
+				LCD_DrawLine (200, 264, 200, 268, BLACK );
+				// Horizontal deco
+				LCD_DrawLine (216, 248, 220, 248, BLACK );
+				LCD_DrawLine (180, 248, 184, 248, BLACK );
+				// Slanted deco
+				LCD_DrawLine (182, 230, 186, 234, BLACK );
+				LCD_DrawLine (182, 266, 186, 262, BLACK );
+				LCD_DrawLine (218, 230, 214, 234, BLACK );
+				LCD_DrawLine (218, 266, 214, 262, BLACK );
+				LCD_DrawEllipse (200, 248, 12, 12, BLACK);
 			}
-			pStr = "Stream Deck";			// Title
-			LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
-
-			/* Options rendering */
-			LCD_DrawBox(176, 32, 48, 48, BLACK);
-			pStr = "K1: Return";
-			LCD_DrawString_Color (32, 40, pStr, BACKGROUND, BLACK );
-			pStr = "K2: Play/Pause";
-			LCD_DrawString_Color (32, 56, pStr, BACKGROUND, BLACK );
-			/* Icon */
-			LCD_DrawBox(184, 48, 8, 16, BLACK);
-			LCD_DrawEllipse (194, 56, 12, 6, BLACK);
-			LCD_DrawEllipse (202, 56, 16, 6, BLACK);
-			LCD_DrawEllipse (210, 56, 20, 6, BLACK);
-
-			LCD_DrawBox(176, 96, 48, 48, BLACK);
-			pStr = "Loaded filename:";
-			LCD_DrawString_Color (32, 104, pStr, BACKGROUND, BLACK );
-			// Loaded filename | Uncomment me upon merging
-		//  pStr = (myPath[0] == 0) ? "No file loaded" : myPath;
-		//  LCD_DrawString_Color (32, 120, pStr, BACKGROUND, BLACK );		
-			/* Icon */
-			LCD_DrawEllipse (200, 120, 12, 12, BLACK);
-
-			LCD_DrawBox(176, 160, 48, 48, BLACK);
-			pStr = "Play/Pause";
-			LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
-			/* Icon */
-			LCD_DrawLine(196, 172, 196, 196, BLACK);
-			LCD_DrawLine(196, 172, 216, 184, BLACK);
-			LCD_DrawLine(196, 196, 216, 184, BLACK);
-
-			LCD_DrawBox(176, 224, 48, 48, BLACK);
-			pStr = "Config";
-			LCD_DrawString_Color (112, 240, pStr, BACKGROUND, BLACK );
-			/* Icon */
-			// Vertical deco
-			LCD_DrawLine (200, 228, 200, 232, BLACK );
-			LCD_DrawLine (200, 264, 200, 268, BLACK );
-			// Horizontal deco
-			LCD_DrawLine (216, 248, 220, 248, BLACK );
-			LCD_DrawLine (180, 248, 184, 248, BLACK );
-			// Slanted deco
-			LCD_DrawLine (182, 230, 186, 234, BLACK );
-			LCD_DrawLine (182, 266, 186, 262, BLACK );
-			LCD_DrawLine (218, 230, 214, 234, BLACK );
-			LCD_DrawLine (218, 266, 214, 262, BLACK );
-			LCD_DrawEllipse (200, 248, 12, 12, BLACK);
 
 			// Main dish :)
 			if ( ucXPT2046_TouchFlag == 1 ) {
@@ -1017,13 +1148,15 @@ int main(void)
 					case 0: break;		// Dummy button
 					case 1: break;		// Dummy button 2
 					case 2: kerry = 1; break;
-					case 3: clearFlag = 0; goto configMenu;
+					case 3: drawGUIFlag = 0; goto configMenu;
 				}
 			}
+
 			HAL_Delay(100);
 			goto mainMenu;
       }
-	
+  }
+
   /* USER CODE END 3 */
 }
 
@@ -1065,8 +1198,9 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_I2S2;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+  PeriphClkInit.I2s2ClockSelection = RCC_I2S2CLKSOURCE_SYSCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -1122,6 +1256,38 @@ static void MX_ADC2_Init(void)
 }
 
 /**
+  * @brief I2S2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2S2_Init(void)
+{
+
+  /* USER CODE BEGIN I2S2_Init 0 */
+
+  /* USER CODE END I2S2_Init 0 */
+
+  /* USER CODE BEGIN I2S2_Init 1 */
+
+  /* USER CODE END I2S2_Init 1 */
+  hi2s2.Instance = SPI2;
+  hi2s2.Init.Mode = I2S_MODE_MASTER_TX;
+  hi2s2.Init.Standard = I2S_STANDARD_PHILIPS;
+  hi2s2.Init.DataFormat = I2S_DATAFORMAT_16B_EXTENDED;
+  hi2s2.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_16K;
+  hi2s2.Init.CPOL = I2S_CPOL_LOW;
+  if (HAL_I2S_Init(&hi2s2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2S2_Init 2 */
+
+  /* USER CODE END I2S2_Init 2 */
+
+}
+
+/**
   * @brief SDIO Initialization Function
   * @param None
   * @retval None
@@ -1142,10 +1308,124 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 0;
+  hsd.Init.ClockDiv = 4;
   /* USER CODE BEGIN SDIO_Init 2 */
 
   /* USER CODE END SDIO_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 72-1;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 100-1;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 72-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 100-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_DISABLE;
+  sSlaveConfig.InputTrigger = TIM_TS_ITR0;
+  if (HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
 }
 
@@ -1192,14 +1472,14 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PE4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC0 */
@@ -1211,7 +1491,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA5 */

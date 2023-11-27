@@ -1,0 +1,5 @@
+../Middlewares/Third_Party/helix_mp3_decoder/imdct.c:186:12:FreqInvertRescale	24	static
+../Middlewares/Third_Party/helix_mp3_decoder/imdct.c:262:22:idct9	48	static,ignoring_inline_asm
+../Middlewares/Third_Party/helix_mp3_decoder/imdct.c:474:22:imdct12	24	static,ignoring_inline_asm
+../Middlewares/Third_Party/helix_mp3_decoder/imdct.c:133:13:WinPrevious	28	static,ignoring_inline_asm
+../Middlewares/Third_Party/helix_mp3_decoder/imdct.c:722:5:xmp3_IMDCT	296	static,ignoring_inline_asm

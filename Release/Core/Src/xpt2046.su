@@ -1,0 +1,8 @@
+../Core/Src/xpt2046.c:67:17:XPT2046_ReadCMD	16	static
+../Core/Src/xpt2046.c:42:13:XPT2046_WriteCMD	16	static
+../Core/Src/xpt2046.c:242:16:XPT2046_ReadAdc_Smooth_XY	64	static
+../Core/Src/xpt2046.c:363:9:XPT2046_Touch_Calibrate	152	static
+../Core/Src/xpt2046.c:480:9:XPT2046_Get_TouchedPoint	48	static
+../Core/Src/xpt2046.c:502:5:menuButton	16	static
+../Core/Src/xpt2046.c:534:5:backButton	16	static
+../Core/Src/xpt2046.c:579:5:audiofxConfig	16	static
