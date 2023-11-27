@@ -82,63 +82,61 @@ void HAL_MspInit(void)
 }
 
 /**
-* @brief DAC MSP Initialization
+* @brief ADC MSP Initialization
 * This function configures the hardware resources used in this example
-* @param hdac: DAC handle pointer
+* @param hadc: ADC handle pointer
 * @retval None
 */
-void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac)
+void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(hdac->Instance==DAC)
+  if(hadc->Instance==ADC2)
   {
-  /* USER CODE BEGIN DAC_MspInit 0 */
+  /* USER CODE BEGIN ADC2_MspInit 0 */
 
-  /* USER CODE END DAC_MspInit 0 */
+  /* USER CODE END ADC2_MspInit 0 */
     /* Peripheral clock enable */
-    __HAL_RCC_DAC_CLK_ENABLE();
+    __HAL_RCC_ADC2_CLK_ENABLE();
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**DAC GPIO Configuration
-    PA4     ------> DAC_OUT1
-    PA5     ------> DAC_OUT2
+    /**ADC2 GPIO Configuration
+    PA4     ------> ADC2_IN4
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+    GPIO_InitStruct.Pin = GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN DAC_MspInit 1 */
+  /* USER CODE BEGIN ADC2_MspInit 1 */
 
-  /* USER CODE END DAC_MspInit 1 */
+  /* USER CODE END ADC2_MspInit 1 */
   }
 
 }
 
 /**
-* @brief DAC MSP De-Initialization
+* @brief ADC MSP De-Initialization
 * This function freeze the hardware resources used in this example
-* @param hdac: DAC handle pointer
+* @param hadc: ADC handle pointer
 * @retval None
 */
-void HAL_DAC_MspDeInit(DAC_HandleTypeDef* hdac)
+void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 {
-  if(hdac->Instance==DAC)
+  if(hadc->Instance==ADC2)
   {
-  /* USER CODE BEGIN DAC_MspDeInit 0 */
+  /* USER CODE BEGIN ADC2_MspDeInit 0 */
 
-  /* USER CODE END DAC_MspDeInit 0 */
+  /* USER CODE END ADC2_MspDeInit 0 */
     /* Peripheral clock disable */
-    __HAL_RCC_DAC_CLK_DISABLE();
+    __HAL_RCC_ADC2_CLK_DISABLE();
 
-    /**DAC GPIO Configuration
-    PA4     ------> DAC_OUT1
-    PA5     ------> DAC_OUT2
+    /**ADC2 GPIO Configuration
+    PA4     ------> ADC2_IN4
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4|GPIO_PIN_5);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
 
-  /* USER CODE BEGIN DAC_MspDeInit 1 */
+  /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
-  /* USER CODE END DAC_MspDeInit 1 */
+  /* USER CODE END ADC2_MspDeInit 1 */
   }
 
 }

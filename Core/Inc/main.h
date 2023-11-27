@@ -37,7 +37,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 extern TIM_HandleTypeDef htim1;
-extern DAC_HandleTypeDef hdac;
+//extern DAC_HandleTypeDef hdac;
 extern DMA_HandleTypeDef hdma_dac_ch1;
 extern I2S_HandleTypeDef hi2s2;
 extern uint8_t updateLCDStartPlay;
