@@ -184,9 +184,15 @@ uint8_t virtualAudioPlayerTask() {
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint16_t testingIntensity = 0;
 void dvModule (void) {
 	// intensity = getAudioIntensity();
-//	currentAudioIntensity = 50;			// For testing purposes
+//  testingIntensity++;
+//  if (testingIntensity > 100) {
+//    testingIntensity = 0;
+//  }
+//	currentAudioIntensity = testingIntensity;			// For testing purposes
+
 
 	/**
 	 * I originally planned to change the voltage
@@ -195,23 +201,30 @@ void dvModule (void) {
 	 * so here we are ;)
 	 */
 	if (shock == 1) {
-		switch (buzz) {
-			case 1:
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
-				HAL_Delay(currentAudioIntensity / 3);
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-				break;
-			case 2:
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
-				HAL_Delay(currentAudioIntensity * 2 / 3);
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-				break;
-			case 3:
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
-				HAL_Delay(currentAudioIntensity);
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-				break;
-		}
+		// switch (buzz) {
+		// 	case 1:
+		// 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+		// 		HAL_Delay(100 - (currentAudioIntensity / 3));
+		// 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
+		// 		break;
+		// 	case 2:
+		// 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_RESET);
+		// 		HAL_Delay(100 - (currentAudioIntensity * 2 / 3));
+		// 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		// 		break;
+		// 	case 3:
+		// 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_RESET);
+		// 		HAL_Delay(100 - currentAudioIntensity);
+		// 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		// 		break;
+		// }
+    currentAudioIntensity = currentAudioIntensity / 6 * (buzz+3);
+    if (buzz == 3 ) {
+      currentAudioIntensity = currentAudioIntensity * 1.5;
+      currentAudioIntensity > 1000 ? currentAudioIntensity = 1000 : currentAudioIntensity;
+
+    }
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, currentAudioIntensity);
 	}
 	return;
 }
@@ -255,6 +268,7 @@ int main(void)
   MX_I2S2_Init();
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
+
 	FATFS myFATFS;
 	FIL myFILE;
 	UINT numberofbytes;
@@ -286,7 +300,7 @@ int main(void)
   LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLACK );
   HAL_Delay(1000);
   LCD_Clear(0, 0, 240, 320, BACKGROUND);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_RESET);		// Debugging
+//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_RESET);		// Debugging
   HAL_ADCEx_Calibration_Start(&hadc2);
   HAL_ADC_Start(&hadc2);
   HAL_ADC_PollForConversion(&hadc2, 100);
@@ -436,8 +450,9 @@ int main(void)
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-              curGUITask = configMenuTask;
-              drawGUIFlag = 1;
+						  curGUITask = configMenuTask;
+						  drawGUIFlag = 1;
+						  break;
 						case 1:
 							if (inputSrc == 0) {
 								LCD_Clear (184, 64, 48, 48, BACKGROUND);
@@ -672,19 +687,20 @@ int main(void)
 						case 0:
               drawGUIFlag = 1;
               curGUITask = configMenuTask;
+              break;
 						case 1:		// Toggle
 							if (shock == 0) {
 								LCD_Clear (184, 64, 48, 48, BACKGROUND);
 								LCD_DrawBox(184, 64, 48, 48, GREEN);
 								pStr = "ON";
 								LCD_DrawString_Color (200, 80, pStr, BACKGROUND, GREEN);
-								shock++;
+								shock = 1;
 							} else {
 								LCD_Clear (184, 64, 48, 48, BACKGROUND);
 								LCD_DrawBox(184, 64, 48, 48, ORANGE);
 								pStr = "OFF";
 								LCD_DrawString_Color (200, 80, pStr, BACKGROUND, ORANGE);
-								shock--;
+								shock = 0;
 							}
 							break;
 						case 2:		// Cascade
@@ -1384,8 +1400,8 @@ static void MX_TIM2_Init(void)
   /* USER CODE END TIM2_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
@@ -1393,7 +1409,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 72-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 100-1;
+  htim2.Init.Period = 1000-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -1405,9 +1421,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_DISABLE;
-  sSlaveConfig.InputTrigger = TIM_TS_ITR0;
-  if (HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig) != HAL_OK)
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1417,9 +1431,18 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 500;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -1459,7 +1482,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_2|GPIO_PIN_0|GPIO_PIN_1, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_5, GPIO_PIN_SET);

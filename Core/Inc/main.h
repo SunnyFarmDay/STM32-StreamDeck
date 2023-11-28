@@ -37,11 +37,13 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
 //extern DAC_HandleTypeDef hdac;
 extern DMA_HandleTypeDef hdma_dac_ch1;
 extern I2S_HandleTypeDef hi2s2;
 extern uint8_t updateLCDStartPlay;
 extern uint8_t playPCMFlag;
+extern uint16_t shock;
 
 /* USER CODE END ET */
 
@@ -54,6 +56,8 @@ extern int kay;
 /* USER CODE BEGIN EM */
 
 /* USER CODE END EM */
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);

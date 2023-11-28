@@ -24,7 +24,7 @@ uint8_t fillBufFlag = 0;
 uint32_t targetAudioFrequency = 16000;
 uint16_t fxMode = 11;
 
-float volume = 0.2;
+float volume = 1;
 uint16_t currentAudioIntensity = 0;
 
 #define PI 3.14159265358979323846
@@ -106,6 +106,9 @@ double pitchShift = pow(2.0, robotFactor / 12.0);
 uint8_t playPCMFileInit(char *filename)
 {
     changeSpeed();
+    if (shock) {
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+    }
 
     res = f_open(&file, filename, FA_READ);
     if (res != FR_OK)
@@ -144,8 +147,8 @@ uint16_t getAudioIntensity(uint16_t* audioData, int size) {
     for (int i = 0; i < size; i++) {
         accumulated += abs(audioData[i]);
     }
-    currentAudioIntensity = (uint16_t) (((accumulated / (float) size) - 25000)*100/20000);
-    currentAudioIntensity = currentAudioIntensity > 100 ? 100 : currentAudioIntensity;
+    currentAudioIntensity = (uint16_t) (((accumulated / (float) size) - 25000)*1000/15000) ;
+    currentAudioIntensity = currentAudioIntensity > 1000 ? 1000 : currentAudioIntensity;
     currentAudioIntensity = currentAudioIntensity < 0 ? 0 : currentAudioIntensity;
     return currentAudioIntensity;
 }
@@ -163,7 +166,7 @@ void changeSpeed() {
         targetAudioFrequency = 32000;
         break;
     case 21:
-        targetAudioFrequency = 48000;
+        targetAudioFrequency = 44000;
         break;
     case 22:
         targetAudioFrequency = 12000;
@@ -249,6 +252,13 @@ void playPCMFileEnd()
     playingFlag = 0;
     f_close(&file);
     HAL_I2S_DMAStop(&hi2s2);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_RESET);
+    if (shock) {
+        
+        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
+        currentAudioIntensity = 0;
+        dvModule();
+    }
 }
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
