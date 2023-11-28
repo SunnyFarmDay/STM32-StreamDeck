@@ -318,17 +318,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		// goto mainMenu;
 
-		if (!virtualAudioPlayerTask()) {
-			// drawGUIFlag is only used in configMenu and mainMenu labels that use just one label to render everything
-			// Labels ending with "Begin" are only rendered once, so drawButtonsFlag isn't necessary
-			/**
-			 * Adding the justification here for subsequent code snippets:
-			 * For the adaptive brightness feature to work properly,
-			 * HAL_ADC_GetValue() must be called every 100ms
-			 */
+	if (!virtualAudioPlayerTask()) { // this is a virtual task for the MP3 player with its own loop
+
       ruler = HAL_ADC_GetValue(&hadc2);
       adaptiveBrightness(trueTone, ruler);
-		switch(curGUITask) {
+	switch(curGUITask) { // the GUI task
       case audiofxConfigTask:
       if (drawGUIFlag) {
         drawGUIFlag = 0;
