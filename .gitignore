@@ -1,3 +1,6 @@
 .vscode
 .settings/
 Debug/
+FATFS/Target/fatfs_platform.c
+FATFS/Target/fatfs_platform.h
+.mxproject
