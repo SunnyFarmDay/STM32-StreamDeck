@@ -206,12 +206,12 @@ void SysTick_Handler(void)
 void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
-  if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_0) != RESET)
-  {
-        kay = 1;
-	    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_0);
-	    HAL_GPIO_EXTI_Callback(GPIO_PIN_0);
-  }
+  // if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_0) != RESET)
+  // {
+  //       kay = 1;
+	//     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_0);
+	//     HAL_GPIO_EXTI_Callback(GPIO_PIN_0);
+  // }
 
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
@@ -273,12 +273,12 @@ void TIM1_UP_IRQHandler(void)
 void EXTI15_10_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
-  if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_13) != RESET)
-  {
-      kerry = 1;
-	    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13);
-	    HAL_GPIO_EXTI_Callback(GPIO_PIN_13);
-  }
+  // if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_13) != RESET)
+  // {
+  //     kerry = 1;
+	//     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13);
+	//     HAL_GPIO_EXTI_Callback(GPIO_PIN_13);
+  // }
   /* USER CODE END EXTI15_10_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */

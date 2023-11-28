@@ -62,6 +62,10 @@ TIM_HandleTypeDef htim2;
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
+
+/* Flags */
+uint16_t actionFlag = 0, drawGUIFlag = 0, drawButtonsFlag = 0;
+
  float value = 0.2;
  uint32_t var;
  uint32_t sine_val[100];
@@ -86,10 +90,11 @@ SRAM_HandleTypeDef hsram1;
 	if (GPIO_Pin == GPIO_PIN_13) {
 		playPCMFlag = playPCMFlag == 0 ? 1 : 0;
 		// No longer used!
-//		if (!playPCMFlag) {
-//			drawGUIFlag = 1;
-//		}
-//		updateLCDStartPlay = 1;
+		if (!playPCMFlag) {
+			drawGUIFlag = 1;
+      drawButtonsFlag = 1;
+		}
+		updateLCDStartPlay = 1;
  	}
 }
 
@@ -135,8 +140,6 @@ const uint16_t sin_tbl_int[91] = {	    0,   572,  1144,  1715,  2286,  2856,  34
 /* Strings */
 char * pStr = 0, cStr [10];
 
-/* Flags */
-uint16_t actionFlag = 0, drawGUIFlag = 0, drawButtonsFlag = 0;
 uint16_t inputSrc = 0 /* 0 = SD | 1 = 3.5mm */;		// See xpt2046.c \ audiofxConfig()
 int kay = 0 /* K1 flag */, kerry = 0 /* K2 flag */;
 uint16_t trueTone = 0 /* LDR trigger */, colourP = 0;	// Display colour preset

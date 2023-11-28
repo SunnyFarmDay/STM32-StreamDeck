@@ -232,17 +232,6 @@ void playPCMFile(char *filename) {
                 playingFlag = 0;
                 break;
             }
-            if (kay == 1) {         // K1 pressed!
-				kay = 0;
-                nextSongFlag = 1;
-                playingFlag = 0;
-                break;
-            }
-            if (kerry == 1) {       // K2 pressed!
-                kerry = 0;
-                playingFlag = 0;    // For now we just "pause" by clearing this flag
-                break;
-            }
             pcmBufferIndex = 0;
             fillBufFlag = 0;
         }
