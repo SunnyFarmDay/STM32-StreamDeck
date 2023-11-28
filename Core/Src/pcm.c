@@ -175,6 +175,7 @@ void changeSpeed() {
     changeI2SFreq(targetAudioFrequency);
 }
 void addFx(uint16_t* audioData, int size) {
+    dvModule();
     switch (fxMode) {
         case 11:
             break;
@@ -229,6 +230,17 @@ void playPCMFile(char *filename) {
             {
                 nextSongFlag = 1;
                 playingFlag = 0;
+                break;
+            }
+            if (kay == 1) {         // K1 pressed!
+				kay = 0;
+                nextSongFlag = 1;
+                playingFlag = 0;
+                break;
+            }
+            if (kerry == 1) {       // K2 pressed!
+                kerry = 0;
+                playingFlag = 0;    // For now we just "pause" by clearing this flag
                 break;
             }
             pcmBufferIndex = 0;

@@ -563,7 +563,7 @@ int menuButton(void)			// Button handler for main menu
 			}
 			
 			else if ( ( strDisplayCoordinate .y > 229 ) && ( strDisplayCoordinate .y < 267 ) )
-			{	// Button 4
+			{	// Button 4. Should be unused for now
 				return 3;
 			}		
 		}

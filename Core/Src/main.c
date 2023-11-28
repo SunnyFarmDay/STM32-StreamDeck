@@ -171,7 +171,8 @@ uint8_t virtualAudioPlayerTask() {
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void dvModule (void) {
-	intensity = getAudioIntensity();
+	// intensity = getAudioIntensity();
+	intensity = 50;			// For testing purposes
 
 	/**
 	 * I originally planned to change the voltage
@@ -182,19 +183,19 @@ void dvModule (void) {
 	if (shock == 1) {
 		switch (buzz) {
 			case 1:
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-				HAL_Delay(intensity / 3);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
+				HAL_Delay(intensity / 3);
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 				break;
 			case 2:
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-				HAL_Delay(intensity * 2 / 3);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
+				HAL_Delay(intensity * 2 / 3);
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 				break;
 			case 3:
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-				HAL_Delay(intensity);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
+				HAL_Delay(intensity);
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 				break;
 		}
 	}
@@ -269,6 +270,7 @@ int main(void)
   LCD_DrawString_Color ( ( usScreenWidth - ( strlen ( pStr ) - 7 ) * WIDTH_EN_CHAR ) >> 2, usScreenHeight >> 1, pStr, BACKGROUND, BLACK );
   HAL_Delay(1000);
   LCD_Clear(0, 0, 240, 320, BACKGROUND);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_RESET);		// Debugging
   HAL_ADCEx_Calibration_Start(&hadc2);
   HAL_ADC_Start(&hadc2);
   HAL_ADC_PollForConversion(&hadc2, 100);
@@ -1117,30 +1119,34 @@ int main(void)
 				/* Icon */
 				LCD_DrawEllipse (200, 120, 12, 12, BLACK);
 
-				LCD_DrawBox(176, 160, 48, 48, BLACK);
-				pStr = "Play/Pause";
-				LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
+				// LCD_DrawBox(176, 160, 48, 48, BLACK);
+				// pStr = "Play/Pause";
+				// LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
 				/* Icon */
+				// LCD_DrawLine(192, 172, 192, 196, BLACK);
+				// LCD_DrawLine(192, 172, 212, 184, BLACK);
+				// LCD_DrawLine(192, 196, 212, 184, BLACK);
+
+				LCD_DrawBox(176, 160, 48, 48, BLACK);
+				pStr = "Config";
+				LCD_DrawString_Color (32, 176, pStr, BACKGROUND, BLACK );
+				/* Icon 1 */
 				LCD_DrawLine(192, 172, 192, 196, BLACK);
 				LCD_DrawLine(192, 172, 212, 184, BLACK);
 				LCD_DrawLine(192, 196, 212, 184, BLACK);
-
-				LCD_DrawBox(176, 224, 48, 48, BLACK);
-				pStr = "Config";
-				LCD_DrawString_Color (32, 240, pStr, BACKGROUND, BLACK );
-				/* Icon */
-				// Vertical deco
-				LCD_DrawLine (200, 228, 200, 232, BLACK );
-				LCD_DrawLine (200, 264, 200, 268, BLACK );
-				// Horizontal deco
-				LCD_DrawLine (216, 248, 220, 248, BLACK );
-				LCD_DrawLine (180, 248, 184, 248, BLACK );
-				// Slanted deco
-				LCD_DrawLine (182, 230, 186, 234, BLACK );
-				LCD_DrawLine (182, 266, 186, 262, BLACK );
-				LCD_DrawLine (218, 230, 214, 234, BLACK );
-				LCD_DrawLine (218, 266, 214, 262, BLACK );
-				LCD_DrawEllipse (200, 248, 12, 12, BLACK);
+				/* Icon 2 */
+				// // Vertical deco
+				// LCD_DrawLine (200, 164, 200, 168, BLACK );
+				// LCD_DrawLine (200, 200, 200, 204, BLACK );
+				// // Horizontal deco
+				// LCD_DrawLine (216, 184, 220, 184, BLACK );
+				// LCD_DrawLine (180, 184, 184, 184, BLACK );
+				// // Slanted deco
+				// LCD_DrawLine (182, 166, 186, 170, BLACK );
+				// LCD_DrawLine (182, 202, 186, 198, BLACK );
+				// LCD_DrawLine (218, 166, 214, 170, BLACK );
+				// LCD_DrawLine (218, 202, 214, 198, BLACK );
+				// LCD_DrawEllipse (200, 184, 12, 12, BLACK);
 			}
 
 			// Main dish :)
@@ -1150,8 +1156,7 @@ int main(void)
 				switch (actionFlag) {
 					case 0: break;		// Dummy button
 					case 1: break;		// Dummy button 2
-					case 2: kerry = 1; break;
-					case 3: drawGUIFlag = 0; goto configMenu;
+					case 2: drawGUIFlag = 0; goto configMenu;
 				}
 			}
 
