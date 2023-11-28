@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "lcdtp.h"
 #include "main.h"
+#include "pcm.h"
 
 FRESULT scanFiles(char* path);
 

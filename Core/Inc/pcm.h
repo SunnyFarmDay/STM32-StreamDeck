@@ -15,6 +15,8 @@ extern uint16_t pcmBufferIndex;
 extern uint8_t playingFlag;
 extern uint32_t targetAudioFrequency;
 extern uint16_t fxMode;
+extern uint8_t nextSongFlag;
+extern uint16_t currentAudioIntensity;
 
 void playPCMFile(char *filename);
 

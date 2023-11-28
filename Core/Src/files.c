@@ -42,6 +42,7 @@ FRESULT scanFiles(char* path) {
                     // LCD_DrawString(0, (trackIndex + 4) * 15, PathBUF);
                     trackIndex++;
                 } else if (strstr(fno.fname, ".pcm") != NULL || strstr(fno.fname, ".PCM") != NULL) {
+                	nextSongFlag = 0;
                     sprintf(PathBUF, "%s/%s", path, fno.fname);
                     // LCD_DrawString(0, (trackIndex + 4) * 15, PathBUF);
                     // LCD_Clear(10, 300, 240, 320, BACKGROUND);

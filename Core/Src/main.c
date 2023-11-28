@@ -64,7 +64,20 @@ SRAM_HandleTypeDef hsram1;
 /* USER CODE BEGIN PV */
 
 /* Flags */
-uint16_t actionFlag = 0, drawGUIFlag = 0, drawButtonsFlag = 0;
+uint16_t actionFlag = 0, drawGUIFlag = 1, drawButtonsFlag = 1;
+uint8_t SDCardStatus = 0;
+
+typedef enum {
+  mainMenuTask,
+  configMenuTask,
+  audiofxConfigTask,
+  displayConfigTask,
+  dvConfigTask,
+  hiddenConfigTask,
+  threeFPSRGBTask,
+} GUITask;
+
+GUITask curGUITask = mainMenuTask;
 
  float value = 0.2;
  uint32_t var;
@@ -80,16 +93,15 @@ uint16_t actionFlag = 0, drawGUIFlag = 0, drawButtonsFlag = 0;
  }
  uint8_t updateLCDStartPlay = 1;
  uint8_t playPCMFlag = 0;
- // Definition refreshed below!
- // uint8_t drawGUIFlag = 1;
- // uint8_t drawButtonsFlag = 1;
  void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == GPIO_PIN_0) {
+    if (curGUITask != threeFPSRGBTask) {
+      nextSongFlag = 1; 
+    }
     kay = 1;
   }
 	if (GPIO_Pin == GPIO_PIN_13) {
 		playPCMFlag = playPCMFlag == 0 ? 1 : 0;
-		// No longer used!
 		if (!playPCMFlag) {
 			drawGUIFlag = 1;
       drawButtonsFlag = 1;
@@ -144,7 +156,6 @@ uint16_t inputSrc = 0 /* 0 = SD | 1 = 3.5mm */;		// See xpt2046.c \ audiofxConfi
 int kay = 0 /* K1 flag */, kerry = 0 /* K2 flag */;
 uint16_t trueTone = 0 /* LDR trigger */, colourP = 0;	// Display colour preset
 uint16_t shock = 0 /* Dynamic vibration trigger */, buzz = 1;	// 1 = Mildest | 3 = Strongest
-uint16_t intensity = 0;		// I store the value of getAudioIntensity()
 uint16_t ruler;		// ADC2
 uint16_t chovy[3];	// ADC2 Read buffer
 /* USER CODE END PV */
@@ -175,7 +186,7 @@ uint8_t virtualAudioPlayerTask() {
 /* USER CODE BEGIN 0 */
 void dvModule (void) {
 	// intensity = getAudioIntensity();
-	intensity = 50;			// For testing purposes
+//	currentAudioIntensity = 50;			// For testing purposes
 
 	/**
 	 * I originally planned to change the voltage
@@ -187,17 +198,17 @@ void dvModule (void) {
 		switch (buzz) {
 			case 1:
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
-				HAL_Delay(intensity / 3);
+				HAL_Delay(currentAudioIntensity / 3);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 				break;
 			case 2:
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
-				HAL_Delay(intensity * 2 / 3);
+				HAL_Delay(currentAudioIntensity * 2 / 3);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 				break;
 			case 3:
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5,   GPIO_PIN_SET);
-				HAL_Delay(intensity);
+				HAL_Delay(currentAudioIntensity);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 				break;
 		}
@@ -254,6 +265,7 @@ int main(void)
 	res = f_mount(&myFATFS,SDPath,1);
 	if (res == FR_OK)
 	{
+    SDCardStatus = 1;
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0,GPIO_PIN_RESET);
 		f_open(&myFILE, myPath, FA_WRITE |FA_CREATE_ALWAYS);
 		f_write(&myFILE, myData, sizeof(myData), &numberofbytes);
@@ -263,6 +275,7 @@ int main(void)
 	}
 	else
 	{
+    SDCardStatus = 0;
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
 	}
   
@@ -289,12 +302,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		goto mainMenu;
-		
+		// goto mainMenu;
+
 		if (!virtualAudioPlayerTask()) {
 			// drawGUIFlag is only used in configMenu and mainMenu labels that use just one label to render everything
 			// Labels ending with "Begin" are only rendered once, so drawButtonsFlag isn't necessary
-    	audiofxConfigPageBegin:
+			/**
+			 * Adding the justification here for subsequent code snippets:
+			 * For the adaptive brightness feature to work properly,
+			 * HAL_ADC_GetValue() must be called every 100ms
+			 */
+      ruler = HAL_ADC_GetValue(&hadc2);
+      adaptiveBrightness(trueTone, ruler);
+		switch(curGUITask) {
+      case audiofxConfigTask:
+      if (drawGUIFlag) {
+        drawGUIFlag = 0;
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -326,17 +349,10 @@ int main(void)
 			/* Title */
 			pStr = "Audio FX";
 			LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
-			
-			audiofxConfigPageRender:
-			/**
-			 * Adding the justification here for subsequent code snippets:
-			 * For the adaptive brightness feature to work properly,
-			 * HAL_ADC_GetValue() must be called every 100ms
-			 */
-				ruler = HAL_ADC_GetValue(&hadc2);
-				adaptiveBrightness(trueTone, ruler);
+      }
+      if (drawButtonsFlag) {
+        drawButtonsFlag = 0;
 				/* Voice effect selection */
-				if (drawButtonsFlag == 0) {
 					if (fxMode == 11) {
 						LCD_DrawBox(32, 142, 48, 48, GREEN);
 						pStr = "No";
@@ -395,35 +411,33 @@ int main(void)
 
 					if (fxMode == 22) {
 						LCD_DrawBox(92, 198, 48, 48, GREEN);
-						pStr = "Dino";
+						pStr = "Grand";
 						LCD_DrawString_Color (94, 214, pStr, BACKGROUND, GREEN);
 					}
 					else {
 						LCD_DrawBox(92, 198, 48, 48, BLACK);
-						pStr = "Dino";
+						pStr = "Grand";
 						LCD_DrawString_Color (94, 214, pStr, BACKGROUND, BLACK);
 					}
 
 					if (fxMode == 23) {
 						LCD_DrawBox(152, 198, 48, 48, GREEN);
-						pStr = "R2-D2";
+						pStr = "Ghost";
 						LCD_DrawString_Color (154, 214, pStr, BACKGROUND, GREEN);
 					}
 					else {
 						LCD_DrawBox(152, 198, 48, 48, BLACK);
-						pStr = "R2-D2";
+						pStr = "Ghost";
 						LCD_DrawString_Color (154, 214, pStr, BACKGROUND, BLACK);
 					}
-					drawButtonsFlag++;
 				}
-
 				if ( ucXPT2046_TouchFlag == 1 ) {
 					actionFlag = audiofxConfig();
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							drawGUIFlag = 0;
-							goto configMenu;
+              curGUITask = configMenuTask;
+              drawGUIFlag = 1;
 						case 1:
 							if (inputSrc == 0) {
 								LCD_Clear (184, 64, 48, 48, BACKGROUND);
@@ -440,18 +454,19 @@ int main(void)
 							}
 							break;
 						// Toggle FX
-						case 11: drawButtonsFlag = 0; fxMode = 11; break;
-						case 12: drawButtonsFlag = 0; fxMode = 12; break;
-						case 13: drawButtonsFlag = 0; fxMode = 13; break;
-						case 21: drawButtonsFlag = 0; fxMode = 21; break;
-						case 22: drawButtonsFlag = 0; fxMode = 22; break;
-						case 23: drawButtonsFlag = 0; fxMode = 23; break;
+						case 11: drawButtonsFlag = 1; fxMode = 11; break;
+						case 12: drawButtonsFlag = 1; fxMode = 12; break;
+						case 13: drawButtonsFlag = 1; fxMode = 13; break;
+						case 21: drawButtonsFlag = 1; fxMode = 21; break;
+						case 22: drawButtonsFlag = 1; fxMode = 22; break;
+						case 23: drawButtonsFlag = 1; fxMode = 23; break;
 					}
 				}
-				HAL_Delay(100);
-				goto audiofxConfigPageRender;
+        break;
+      case displayConfigTask:
+      if (drawGUIFlag) {
+      drawGUIFlag = 0;
 
-		displayConfigPageBegin:
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -525,15 +540,11 @@ int main(void)
 			/* Title */
 			pStr = "Display options";
 			LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK);
-
-			displayConfigPageRender:
+      }
 				// Showing LDR value on screen
 				// sprintf(chovy, "%x",  ruler);
 				// LCD_Clear(128, 88, 48, 16, BACKGROUND);
 				// LCD_DrawString(128, 88, chovy);
-
-				ruler = HAL_ADC_GetValue(&hadc2);
-				adaptiveBrightness(trueTone, ruler);
 
 				// drawButtonsFlag isn't needed as these buttons are only rendered once the touchscreen senses input
 				if ( ucXPT2046_TouchFlag == 1 ) {
@@ -541,8 +552,8 @@ int main(void)
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							drawGUIFlag = 0;
-							goto configMenu;
+              drawGUIFlag = 1;
+              curGUITask = configMenuTask;
 						case 1:
 							if (trueTone == 0) {
 								LCD_Clear (184, 64, 48, 48, BACKGROUND);
@@ -592,13 +603,12 @@ int main(void)
 									break;
 							}
 							break;
-						case 3: goto threeFPSRGB;
+						case 3: drawGUIFlag = 1; curGUITask = threeFPSRGBTask; break;
 					}
 				}
-				HAL_Delay(100);
-				goto displayConfigPageRender;
-
-		dvConfigPageBegin:
+        break;
+      case dvConfigTask:
+      if (drawGUIFlag) {
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -633,6 +643,10 @@ int main(void)
 			pStr = "1=Mild | 3=Strong";
 			LCD_DrawString_Color (16, 136, pStr, BACKGROUND, BLACK );
 
+			/* Title */
+			pStr = "Dynamic Vibration";
+			LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
+
 			sprintf(cStr, "%d", buzz);
 			switch (buzz) {
 				case 1:
@@ -648,21 +662,16 @@ int main(void)
 					LCD_DrawString_Color (204, 136, cStr, BACKGROUND, ORANGE);
 					break;
 			}
-
-			/* Title */
-			pStr = "Dynamic Vibration";
-			LCD_DrawString_Color (64, 24, pStr, BACKGROUND, BLACK );
-
-			dvConfigPageRender:
-				ruler = HAL_ADC_GetValue(&hadc2);
-				adaptiveBrightness(trueTone, ruler);
+      drawGUIFlag = 0;
+      drawButtonsFlag = 0;
+      }
 				if ( ucXPT2046_TouchFlag == 1 ) {
 					actionFlag = backButton();
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							drawGUIFlag = 0;
-							goto configMenu;
+              drawGUIFlag = 1;
+              curGUITask = configMenuTask;
 						case 1:		// Toggle
 							if (shock == 0) {
 								LCD_Clear (184, 64, 48, 48, BACKGROUND);
@@ -697,10 +706,10 @@ int main(void)
 							}
 					}
 				}
-				HAL_Delay(100);
-				goto dvConfigPageRender;
-
-		hiddenConfigPageBegin:
+        break;
+      case hiddenConfigTask:
+      if (drawGUIFlag) {
+      drawGUIFlag = 0;
 			LCD_Clear (0, 0, 240, 320, BACKGROUND);
 
 			/* Button rendering */
@@ -719,27 +728,22 @@ int main(void)
 			/* Title */
 			pStr = "Advanced options";
 			LCD_DrawString_Color ( 64, 24, pStr, BACKGROUND, BLACK );
-
-			hiddenConfigPageRender:
-				ruler = HAL_ADC_GetValue(&hadc2);
-				adaptiveBrightness(trueTone, ruler);
+      }
 
 				if ( ucXPT2046_TouchFlag == 1 ) {
 					actionFlag = backButton();
 					ucXPT2046_TouchFlag = 0;
 					switch (actionFlag) {
 						case 0:
-							drawGUIFlag = 0;
-							goto configMenu;
+              drawGUIFlag = 1;
+              curGUITask = configMenuTask;
 						case 1:
 							colourP = 7;
-							goto threeFPSRGB;
+              curGUITask = threeFPSRGBTask;
 					}
 				}
-				HAL_Delay(100);
-				goto hiddenConfigPageRender;
-
-		threeFPSRGB:
+        break;
+      case threeFPSRGBTask:
 			ruler = HAL_ADC_GetValue(&hadc2);
 			adaptiveBrightness(trueTone, ruler);
 
@@ -1005,21 +1009,17 @@ int main(void)
 			}
 			if (kay == 1) {
 				kay = 0;
-				drawGUIFlag = 0;
+				drawGUIFlag = 1;
 				if (colourP == 7 || colourP == 8) colourP = 0;
-				goto mainMenu;
+        curGUITask = mainMenuTask;
 			}
-			HAL_Delay(100);
-			goto threeFPSRGB;
-
-		configMenu:
-			ruler = HAL_ADC_GetValue(&hadc2);
-			adaptiveBrightness(trueTone, ruler);
+      break;
+      case configMenuTask:
 
 			/* Main menu */
-			if (drawGUIFlag == 0) {
+			if (drawGUIFlag) {
+				drawGUIFlag = 0;
 				LCD_Clear(0, 0, 240, 320, BACKGROUND);
-				drawGUIFlag++;
 
 				LCD_DrawBox(8, 8, 48, 48, BLACK);
 				pStr = "BACK";
@@ -1073,30 +1073,26 @@ int main(void)
 			if ( ucXPT2046_TouchFlag == 1 ) {
 				actionFlag = configButton();
 				ucXPT2046_TouchFlag = 0;
+				drawButtonsFlag = 1;
 				switch (actionFlag) {
-					case 0: drawGUIFlag = 0; goto mainMenu;
-					case 1: goto audiofxConfigPageBegin;
-					case 2: goto displayConfigPageBegin;
-					case 3: goto dvConfigPageBegin;
-					case 4: goto hiddenConfigPageBegin;
+					case 0: drawGUIFlag = 1; curGUITask = mainMenuTask; break;
+					case 1: drawGUIFlag = 1; curGUITask = audiofxConfigTask; break;
+					case 2: drawGUIFlag = 1; curGUITask = displayConfigTask; break;
+					case 3: drawGUIFlag = 1; curGUITask = dvConfigTask; break;
+					case 4: drawGUIFlag = 1; curGUITask = hiddenConfigTask; break;
 				}
 			}
-
-			HAL_Delay(100);
-			goto configMenu;
-		
-		mainMenu:
-			ruler = HAL_ADC_GetValue(&hadc2);
-			adaptiveBrightness(trueTone, ruler);
+      break;
+      case mainMenuTask:
 
       //	if (updateLCDStartPlay) {
       //		LCD_DrawString(100, 100, "Press to start playing");
       //		updateLCDStartPlay = 0;
       //	}
 			/* Main menu */
-			if (drawGUIFlag == 0) {
+			if (drawGUIFlag) {
+        drawGUIFlag = 0;
 				LCD_Clear(0, 0, 240, 320, BACKGROUND);
-				drawGUIFlag++;
 
 				pStr = "Stream Deck";			// Title
 				LCD_DrawString_Color ( 8, 8, pStr, BACKGROUND, BLACK );
@@ -1114,10 +1110,12 @@ int main(void)
 				LCD_DrawEllipse (210, 56, 20, 6, BLACK);
 
 				LCD_DrawBox(176, 96, 48, 48, BLACK);
-				pStr = "Loaded filename:";
+				// pStr = "Loaded filename:";
+        pStr = "SD card status:";
 				LCD_DrawString_Color (32, 104, pStr, BACKGROUND, BLACK );
 				// Loaded filename
-				pStr = (myPath[0] == 0) ? "No file loaded" : myPath;
+				// pStr = (myPath[0] == 0) ? "No file loaded" : myPath;
+        pStr = (SDCardStatus == 0) ? "No SD card" : "SD card inserted";
 				LCD_DrawString_Color (32, 120, pStr, BACKGROUND, BLACK );		
 				/* Icon */
 				LCD_DrawEllipse (200, 120, 12, 12, BLACK);
@@ -1159,13 +1157,14 @@ int main(void)
 				switch (actionFlag) {
 					case 0: break;		// Dummy button
 					case 1: break;		// Dummy button 2
-					case 2: drawGUIFlag = 0; goto configMenu;
+					case 2: drawGUIFlag = 1; curGUITask = configMenuTask; break;
 				}
 			}
-
-			HAL_Delay(100);
-			goto mainMenu;
+      break;
       }
+      HAL_Delay(100);
+    }
+      /* USER CODE END WHILE */
   }
 
   /* USER CODE END 3 */

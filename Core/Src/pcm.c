@@ -25,6 +25,7 @@ uint32_t targetAudioFrequency = 16000;
 uint16_t fxMode = 11;
 
 float volume = 0.2;
+uint16_t currentAudioIntensity = 0;
 
 #define PI 3.14159265358979323846
 #define SAMPLE_RATE 44100
@@ -92,15 +93,15 @@ void changeI2SFreq(uint32_t AudioFreq) {
 
 double pitchShift = pow(2.0, robotFactor / 12.0);
 
-void robotizeAudioData(short* audioData, int size) {
-
-    for (int i = 0; i < size; i++) {
-        double time = (double)i / sampleRate;
-        double shiftedTime = time * pitchShift;
-        int shiftedIndex = (int)(shiftedTime * sampleRate);
-        audioData[i] = audioData[shiftedIndex];
-    }
-}
+//void robotizeAudioData(short* audioData, int size) {
+//
+//    for (int i = 0; i < size; i++) {
+//        double time = (double)i / sampleRate;
+//        double shiftedTime = time * pitchShift;
+//        int shiftedIndex = (int)(shiftedTime * sampleRate);
+//        audioData[i] = audioData[shiftedIndex];
+//    }
+//}
 
 uint8_t playPCMFileInit(char *filename)
 {
@@ -137,14 +138,16 @@ uint8_t playPCMFileInit(char *filename)
     return 1;
 }
 
-uint16_t getMaxVolume(uint16_t* audioData, int size) {
-    uint16_t max = 0;
+#define abs(x) ((x) > 0 ? (x) : -(x))
+uint16_t getAudioIntensity(uint16_t* audioData, int size) {
+    float accumulated = 0;
     for (int i = 0; i < size; i++) {
-        if (audioData[i] > max) {
-            max = audioData[i];
-        }
+        accumulated += abs(audioData[i]);
     }
-    return max;
+    currentAudioIntensity = (uint16_t) (((accumulated / (float) size) - 25000)*100/20000);
+    currentAudioIntensity = currentAudioIntensity > 100 ? 100 : currentAudioIntensity;
+    currentAudioIntensity = currentAudioIntensity < 0 ? 0 : currentAudioIntensity;
+    return currentAudioIntensity;
 }
 
 void changeSpeed() {
@@ -182,6 +185,7 @@ void addFx(uint16_t* audioData, int size) {
         case 12:
             break;
         case 13:
+//            robotizeAudioData(audioData, size);
             break;
         case 21:
             distorted(audioData, size);
@@ -220,6 +224,7 @@ void playPCMFile(char *filename) {
                 inBuffer[i] = inBuffer[i] * volume;
             }
             addFx(inBuffer, DECODE_BUFFERSIZE / 2);
+            getAudioIntensity(inBuffer, DECODE_BUFFERSIZE / 2);
             if (res != FR_OK)
             {
                 nextSongFlag = 1;
